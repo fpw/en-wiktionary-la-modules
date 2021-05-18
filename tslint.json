@@ -1,0 +1,21 @@
+{
+    "extends": "tslint:recommended",
+    "rules": {
+        "max-line-length": {
+            "options": [200]
+        },
+        "semicolon": true,
+        "quotemark": [true, "double"],
+        "new-parens": true,
+        "triple-equals": false,
+        "variable-name": {
+            "options": ["ban-keywords"]
+        },
+        "object-literal-shorthand": false,
+        "no-arg": true,
+        "no-empty": false,
+        "no-bitwise": true,
+        "no-conditional-assignment": true,
+        "no-consecutive-blank-lines": false
+    }
+}

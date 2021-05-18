@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "es2015",
+        "module": "commonjs",
+        "outDir": "dist",
+        "declaration": true,
+        "sourceMap": true,
+        "esModuleInterop": false,
+        "downlevelIteration": false,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitThis": true,
+        "noImplicitReturns": true,
+        "noImplicitAny": true,
+    },
+    "include": ["src"],
+}
