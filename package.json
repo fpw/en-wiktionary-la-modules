@@ -1,8 +1,19 @@
 {
-  "name": "en-wiktionary-la-modules",
-  "version": "0.0.1",
+  "name": "@fpw/en-wiktionary-la-modules",
+  "author": "Folke Will",
+  "license": "CC-BY-SA-3.0",
+  "version": "0.0.2",
   "description": "Reimplementation of some Latin modules of en.wikipedia.org, especially inflections",
-  "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fpw/en-wiktionary-la-modules"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
   "scripts": {
     "prepack": "tsc",
     "lint": "tslint --project .",
@@ -15,8 +26,6 @@
     "conjugation",
     "declension"
   ],
-  "author": "Folke Will",
-  "license": "CC-BY-SA-3.0",
   "devDependencies": {
     "@types/chai": "4.1.3",
     "@types/mocha": "5.2.7",
