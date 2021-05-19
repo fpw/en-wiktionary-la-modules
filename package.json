@@ -8,9 +8,6 @@
     "type": "git",
     "url": "https://github.com/fpw/en-wiktionary-la-modules"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": ["dist"],
