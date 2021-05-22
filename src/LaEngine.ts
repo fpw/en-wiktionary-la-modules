@@ -1,8 +1,8 @@
-import { parse_template } from "./common";
-import { Conjugation, LaVerb } from "./conjugation/LaVerb";
-import { NounData, LaNominal, AdjectiveData } from "./declination/LaNominal";
-import { Headword } from "./headword/HeadWord";
-import { HeadwordParser } from "./headword/HeadwordParser";
+import { parse_template } from "./modules/common";
+import { Conjugation, LaVerb } from "./modules/conjugation/LaVerb";
+import { NounData, LaNominal, AdjectiveData } from "./modules/declination/LaNominal";
+import { Headword } from "./modules/headword/HeadWord";
+import { HeadwordParser } from "./modules/headword/HeadwordParser";
 
 export type TemplateData = NounData | AdjectiveData | Conjugation | Headword;
 

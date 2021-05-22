@@ -3,7 +3,7 @@ import readline = require("readline");
 import "mocha";
 import { createReadStream, existsSync } from "fs";
 import { expect, should } from "chai";
-import { LaEngine } from "../src/modules/LaEngine";
+import { LaEngine } from "../src/LaEngine";
 import { Conjugation, ConjugationData, ConjugationInfo } from "../src/modules/conjugation/LaVerb";
 import { remove_html, remove_links } from "../src/modules/common";
 import { AdjectiveData, DeclensionData, DeclProp, NounData } from "../src/modules/declination/LaNominal";
@@ -117,6 +117,7 @@ function compareVerbData(luaData: any, jsData: ConjugationData) {
         "acc_suffix",
         "abl_suffix",
     ];
+
     for (const key of preSuf) {
         const luaVal = luaData[key] || "";
         const jsVal = jsData.presuf.get(key) || "";
@@ -292,9 +293,8 @@ function compareForms(jsEntry: Map<string, string[]>, luaEntry: Map<string, stri
             continue;
         }
 
-        if (jsForms.length != luaForms.length) {
-            expect(jsForms.length).to.equal(luaForms.length);
-        }
+        expect(jsForms.length).to.equal(luaForms.length,
+            `[${luaForms.toString()}] vs [${jsForms.toString()}] in ${key}`);
 
         for (let i = 0; i < luaForms.length; i++) {
             const jsForm = remove_links(jsForms[i]);

@@ -15,6 +15,7 @@
 import { ArgMap, array_equals, extract_base, FormMap, is_enum_value, read_list, remove_links } from "../common";
 import { m_adj_decl } from "./LaAdjData";
 import { m_noun_decl } from "./LaNounData";
+import { getNominalForm, NominalForm, setNominalForm } from "./NominalForm";
 
 export enum Gender {
     M = "M",
@@ -73,7 +74,7 @@ export interface DeclProp {
 }
 
 interface Declensions {
-    forms: FormMap;
+    forms: FormMap<NominalForm>;
     notes: Map<string, string[][]>;
     title: string[];
     subtitleses: (string | string[])[];
@@ -90,7 +91,7 @@ export interface DeclensionData {
     title: string;
     num?: NumberTantum;
     propses: DeclProp[];
-    forms: FormMap;
+    forms: FormMap<NominalForm>;
     categories: string[];
     notes: Map<string, string[]>;
     user_specified: Set<string>;
@@ -131,7 +132,7 @@ export interface SegmentData {
     num?: NumberTantum;
     loc?: boolean;
     pos: string;
-    forms: FormMap;
+    forms: FormMap<NominalForm>;
     types: Set<string>;
     categories: string[];
     notes: Map<string, string>;
@@ -221,8 +222,8 @@ export class LaNominal {
         const declensions = this.decline_segment_run(parsed_run, pos, false);
 
         if (!parsed_run.loc) {
-            declensions.forms.delete("loc_sg");
-            declensions.forms.delete("loc_pl");
+            setNominalForm(declensions.forms, "loc_sg", undefined);
+            setNominalForm(declensions.forms, "loc_pl", undefined);
         }
 
         declensions.title = [this.construct_title(args.get("title"), declensions.title.join(""), false, parsed_run)];
@@ -283,21 +284,21 @@ export class LaNominal {
         const declensions = this.decline_segment_run(parsed_run, pos, true);
 
         if (!parsed_run.loc) {
-            declensions.forms.delete("loc_sg_m");
-            declensions.forms.delete("loc_sg_f");
-            declensions.forms.delete("loc_sg_n");
-            declensions.forms.delete("loc_pl_m");
-            declensions.forms.delete("loc_pl_f");
-            declensions.forms.delete("loc_pl_n");
+            setNominalForm(declensions.forms, "loc_sg_m", undefined);
+            setNominalForm(declensions.forms, "loc_sg_f", undefined);
+            setNominalForm(declensions.forms, "loc_sg_n", undefined);
+            setNominalForm(declensions.forms, "loc_pl_m", undefined);
+            setNominalForm(declensions.forms, "loc_pl_f", undefined);
+            setNominalForm(declensions.forms, "loc_pl_n", undefined);
         }
 
         if (!overriding_voc && !declensions.voc) {
-            declensions.forms.delete("voc_sg_m");
-            declensions.forms.delete("voc_sg_f");
-            declensions.forms.delete("voc_sg_n");
-            declensions.forms.delete("voc_pl_m");
-            declensions.forms.delete("voc_pl_f");
-            declensions.forms.delete("voc_pl_n");
+            setNominalForm(declensions.forms, "voc_sg_m", undefined);
+            setNominalForm(declensions.forms, "voc_sg_f", undefined);
+            setNominalForm(declensions.forms, "voc_sg_n", undefined);
+            setNominalForm(declensions.forms, "voc_pl_m", undefined);
+            setNominalForm(declensions.forms, "voc_pl_f", undefined);
+            setNominalForm(declensions.forms, "voc_pl_n", undefined);
         }
 
         declensions.title = [this.construct_title(args.get("title"), declensions.title.join(""), from_headword, parsed_run)];
@@ -396,17 +397,17 @@ export class LaNominal {
                     val = args.get(non_linked_equiv_slot)?.split("/") || [];
                     data.user_specified.add(slot);
                 } else {
-                    val = data.forms.get(slot) || [];
+                    val = getNominalForm(data.forms, slot) || [];
                 }
             }
 
             if (val) {
                 if ((data.num == "pl" && slot.includes("sg")) || (data.num == "sg" && slot.includes("pl"))) {
-                    data.forms.set(slot, [""]);
+                    setNominalForm(data.forms, slot, [""]);
                 } else if (val[0] == "" || val[0] == "-" || val[0] == "—") {
-                    data.forms.set(slot, [LaNominal.EmptyForm]);
+                    setNominalForm(data.forms, slot, [LaNominal.EmptyForm]);
                 } else {
-                    data.forms.set(slot, val);
+                    setNominalForm(data.forms, slot, val);
                 }
             }
         }
@@ -420,7 +421,7 @@ export class LaNominal {
 
         for (const slot of this.iter_adj_slots()) {
             if (data.noneut && slot.match(/_n/)) {
-                data.forms.delete(slot);
+                setNominalForm(data.forms, slot, undefined);
             }
             let val: string[] | undefined;
             const ovr = args.get(slot);
@@ -433,16 +434,16 @@ export class LaNominal {
                     val = args.get(non_linked_equiv_slot)?.split("/") || [];
                     data.user_specified.add(slot);
                 } else {
-                    val = data.forms.get(slot);
+                    val = getNominalForm(data.forms, slot);
                 }
             }
             if (val) {
                 if ((data.num == "pl" && slot.match(/sg/)) || (data.num == "sg" && slot.match(/pl/))) {
-                    data.forms.set(slot, []);
+                    setNominalForm(data.forms, slot, undefined);
                 } else if (val[0] == "" || val[0] == "-" || val[0] == "—") {
-                    data.forms.set(slot, [LaNominal.EmptyForm]);
+                    setNominalForm(data.forms, slot, [LaNominal.EmptyForm]);
                 } else {
-                    data.forms.set(slot, val);
+                    setNominalForm(data.forms, slot, val);
                 }
             }
         }
@@ -451,7 +452,9 @@ export class LaNominal {
             let other_is_masc = true;
             for (const cas of this.cases) {
                 for (const num of this.nums) {
-                    if (!array_equals(data.forms.get(cas + "_" + num + "_" + gender), data.forms.get(cas + "_" + num + "_m"))) {
+                    const genderForm = getNominalForm(data.forms, cas + "_" + num + "_" + gender);
+                    const amscForm = getNominalForm(data.forms, cas + "_" + num + "_m");
+                    if (!array_equals(genderForm, amscForm)) {
                         other_is_masc = false;
                         break;
                     }
@@ -464,7 +467,7 @@ export class LaNominal {
             if (other_is_masc) {
                 for (const cas of this.cases) {
                     for (const num of this.nums) {
-                        data.forms.delete(cas + "_" + num + "_" + gender);
+                        setNominalForm(data.forms, cas + "_" + num + "_" + gender, undefined);
                     }
                 }
             }
@@ -1321,7 +1324,7 @@ export class LaNominal {
         };
 
         for (const slot of this.iter_slots(is_adj)) {
-            declensions.forms.set(slot, [""]);
+            setNominalForm(declensions.forms, slot, [""]);
         }
 
         for (const seg of parsed_run.segments) {
@@ -1452,7 +1455,7 @@ export class LaNominal {
                 }
 
                 for (const slot of potential_lemma_slots) {
-                    const forms = data.forms.get(slot);
+                    const forms = getNominalForm(data.forms, slot);
                     if (forms) {
                         const linked_forms = [];
                         for (const form of forms) {
@@ -1462,7 +1465,7 @@ export class LaNominal {
                                 linked_forms.push(form);
                             }
                         }
-                        data.forms.set(`linked_${slot}`, linked_forms);
+                        setNominalForm(data.forms, `linked_${slot}`, linked_forms);
                     }
                 }
 
@@ -1482,17 +1485,18 @@ export class LaNominal {
                         if (!seg.is_adj) {
                             throw Error(`Can't decline noun '${seg.lemma}' when overall term is an adjective`);
                         }
-                        new_forms = data.forms.get(slot);
+                        new_forms = getNominalForm(data.forms, slot);
                         if (!new_forms && slot.match(/_[fn]$/)) {
-                            new_forms = data.forms.get(slot.replace(/_[fn]$/, "_m"));
+                            new_forms = getNominalForm(data.forms, slot.replace(/_[fn]$/, "_m"));
                         }
                     } else if (seg.is_adj) {
                         if (!seg.gender) {
                             throw Error(`Declining modifying adjective ${seg.lemma} but don't know gender of associated noun`);
                         }
-                        new_forms = data.forms.get(slot + "_" + seg.gender.toLowerCase()) || data.forms.get(slot + "_m");
+                        new_forms = getNominalForm(data.forms, slot + "_" + seg.gender.toLowerCase()) ||
+                             getNominalForm(data.forms, slot + "_m");
                     } else {
-                        new_forms = data.forms.get(slot);
+                        new_forms = getNominalForm(data.forms, slot);
                     }
 
                     const new_notes: string[][] = [];
@@ -1506,8 +1510,9 @@ export class LaNominal {
                         }
                     }
 
-                    const [forms, notes] = this.append_form(declensions.forms.get(slot), declensions.notes.get(slot), new_forms, new_notes, slot.includes("linked") ? seg.orig_prefix : seg.prefix);
-                    declensions.forms.set(slot, forms);
+                    const oldForms = getNominalForm(declensions.forms, slot);
+                    const [forms, notes] = this.append_form(oldForms, declensions.notes.get(slot), new_forms, new_notes, slot.includes("linked") ? seg.orig_prefix : seg.prefix);
+                    setNominalForm(declensions.forms, slot, forms);
                     declensions.notes.set(slot, notes);
                 }
 
@@ -1593,7 +1598,7 @@ export class LaNominal {
                         for (const slot of (this.iter_slots(is_adj))) {
                             if ((this_parsed_run.num == "sg" && slot.includes("pl")) ||
                                 (this_parsed_run.num == "pl" && slot.includes("sg"))) {
-                                    this_declensions.forms.set(slot, []);
+                                    setNominalForm(this_declensions.forms, slot, []);
                                     this_declensions.notes.set(slot, []);
                                 }
                         }
@@ -1603,8 +1608,8 @@ export class LaNominal {
                         seg_declensions = this_declensions;
                     } else {
                         for (const slot of this.iter_slots(is_adj)) {
-                            const curforms = seg_declensions.forms.get(slot) || [];
-                            const newforms = this_declensions.forms.get(slot) || [];
+                            const curforms = getNominalForm(seg_declensions.forms, slot) || [];
+                            const newforms = getNominalForm(this_declensions.forms, slot) || [];
                             const newform_index_to_new_index: number[] = [];
                             newforms.forEach((form, newj) => {
                                 let did_break = false;
@@ -1621,7 +1626,7 @@ export class LaNominal {
                                 }
                             });
 
-                            seg_declensions.forms.set(slot, curforms);
+                            setNominalForm(seg_declensions.forms, slot, curforms);
                             const curnotes = seg_declensions.notes.get(slot) || [];
                             const newnotes = this_declensions.notes.get(slot);
                             if (newnotes) {
@@ -1659,8 +1664,10 @@ export class LaNominal {
                 this.propagate_number_restrictions(seg_declensions?.forms, parsed_run.num, is_adj);
 
                 for (const slot of this.iter_slots(is_adj)) {
-                    const [forms, notes] = this.append_form(declensions.forms.get(slot), declensions.notes.get(slot), seg_declensions.forms.get(slot), seg_declensions.notes.get(slot), undefined);
-                    declensions.forms.set(slot, forms);
+                    const declForms = getNominalForm(declensions.forms, slot);
+                    const segForms = getNominalForm(seg_declensions.forms, slot);
+                    const [newForms, notes] = this.append_form(declForms, declensions.notes.get(slot), segForms, seg_declensions.notes.get(slot), undefined);
+                    setNominalForm(declensions.forms, slot, newForms);
                     declensions.notes.set(slot, notes);
                 }
 
@@ -1792,8 +1799,8 @@ export class LaNominal {
             } else {
                 for (const slot of this.iter_slots(is_adj)) {
                     const prefix = slot.includes("linked") ? seg.orig_prefix : seg.prefix;
-                    const [forms, notes] = this.append_form(declensions.forms.get(slot), declensions.notes.get(slot), [prefix || ""], undefined, undefined);
-                    declensions.forms.set(slot, forms);
+                    const [forms, notes] = this.append_form(getNominalForm(declensions.forms, slot), declensions.notes.get(slot), [prefix || ""], undefined, undefined);
+                    setNominalForm(declensions.forms, slot, forms);
                     declensions.notes.set(slot, notes);
                 }
                 declensions.title.push("indeclinable portion");
@@ -1899,37 +1906,37 @@ export class LaNominal {
         }
     }
 
-    private apply_ligatures(forms: FormMap, is_adj: boolean) {
+    private apply_ligatures(forms: FormMap<NominalForm>, is_adj: boolean) {
         for (const slot of this.iter_slots(is_adj)) {
-            const ffs = forms.get(slot) || [];
+            const ffs = getNominalForm(forms, slot) || [];
             for (let i = 0; i < ffs.length; i++) {
                 ffs[i] = ffs[i].replace(/Ae/g, "Æ");
                 ffs[i] = ffs[i].replace(/Oe/g, "Œ");
                 ffs[i] = ffs[i].replace(/ae/g, "æ");
                 ffs[i] = ffs[i].replace(/oe/g, "œ");
             }
-            forms.set(slot, ffs);
+            setNominalForm(forms, slot, ffs);
         }
     }
 
-    private apply_sufn(forms: FormMap, is_adj: boolean) {
+    private apply_sufn(forms: FormMap<NominalForm>, is_adj: boolean) {
         for (const slot of this.iter_slots(is_adj)) {
-            const ffs = forms.get(slot) || [];
+            const ffs = getNominalForm(forms, slot) || [];
             if (ffs.length == 1 && !slot.includes("linked")) {
                 const form = ffs[0];
                 if (form.match(/m$/)) {
-                    forms.set(slot, [form.replace(/m$/, "n"), ...ffs]);
+                    setNominalForm(forms, slot, [form.replace(/m$/, "n"), ...ffs]);
                 }
             } else {
                 let final_m = false;
-                for (const form of forms.get(slot) || []) {
+                for (const form of getNominalForm(forms, slot) || []) {
                     if (form.match(/m$/)) {
                         final_m = true;
                     }
                 }
                 if (final_m) {
                     const newval = [];
-                    for (const form of forms.get(slot) || []) {
+                    for (const form of getNominalForm(forms, slot) || []) {
                         if (form.match(/m$/)) {
                             const val = form.replace(/m$/, "n");
                             newval.push(val);
@@ -1941,12 +1948,12 @@ export class LaNominal {
         }
     }
 
-    private propagate_number_restrictions(forms: FormMap, num: string | undefined, is_adj: boolean) {
+    private propagate_number_restrictions(forms: FormMap<NominalForm>, num: string | undefined, is_adj: boolean) {
         if (num == "sg" || num == "pl") {
             for (const slot of this.iter_slots(is_adj)) {
                 if (slot.match(num)) {
                     const other_num_slot = (num == "sg") ? slot.replace("sg", "pl") : slot.replace("pl", "sg");
-                    forms.set(other_num_slot, forms.get(slot) || []);
+                    setNominalForm(forms, other_num_slot, getNominalForm(forms, slot) || []);
                 }
             }
         }

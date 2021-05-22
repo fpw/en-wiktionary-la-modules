@@ -1,5 +1,5 @@
 export type ArgMap = Map<string, string>;
-export type FormMap = Map<string, string[]>;
+export type FormMap<T> = Map<T, string[]>;
 
 /**
  * Parse a MediaWiki template string like {{a|b|c=d}} into a key-value map.

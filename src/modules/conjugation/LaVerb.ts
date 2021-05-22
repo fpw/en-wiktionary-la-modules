@@ -14,8 +14,9 @@
  * this code unchanged instead of improving the types and use of idioms in this class.
  *
  */
-
 import { ArgMap, extract_base, FormMap, read_list, remove_links, strip_macrons } from "../common";
+import { getVerbForm, setVerbForm, VerbForm } from "./VerbForm";
+import { addVerbType, hasVerbType, VerbType } from "./VerbType";
 
 export type ConjType = "1st" | "2nd" | "3rd" | "3rd-io" | "4th" | "irreg";
 
@@ -52,7 +53,7 @@ export interface ConjugationInfo {
     orig_lemma: string;
     conj_type: ConjType;
     conj_subtype?: ConjType;
-    subtypes: Set<string>;
+    subtypes: Set<VerbType>;
 
     verb: string;
     prefix: string;
@@ -63,10 +64,10 @@ export interface ConjugationInfo {
 }
 
 export interface ConjugationData {
-    forms: FormMap;
+    forms: FormMap<VerbForm>;
     presuf: ArgMap;
     categories: string[];
-    footnotes: FormMap;
+    footnotes: FormMap<string>;
     overriding_lemma: string[];
 }
 
@@ -137,7 +138,6 @@ export class LaVerb {
 
     private conjugations = new Map<string, ConjugationFunction>();
     private irreg_conjugations = new Map<string, ConjugationFunction>();
-
     private options: ConjOptions;
 
     public constructor(options?: ConjOptions) {
@@ -282,7 +282,7 @@ export class LaVerb {
     public get_lemma_forms(data: ConjugationData, do_linked: boolean): string[] {
         const linked_prefix = (do_linked ? "linked_" : "");
         for (const slot of this.potential_lemma_slots) {
-            const lemma_forms = this.get_valid_forms(data.forms.get(linked_prefix + slot));
+            const lemma_forms = this.get_valid_forms(getVerbForm(data.forms, linked_prefix + slot));
             if (lemma_forms.length > 0) {
                 return lemma_forms;
             }
@@ -380,7 +380,7 @@ export class LaVerb {
             this.make_pres_4th(data, typeinfo, typeinfo.pres_stem);
             this.make_perf_and_supine(data, typeinfo);
 
-            if (this.form_contains(data.forms.get("1s_pres_actv_indc"), "serviō") || this.form_contains(data.forms.get("1s_pres_actv_indc"), "saeviō")) {
+            if (this.form_contains(getVerbForm(data.forms, "1s_pres_actv_indc"), "serviō") || this.form_contains(getVerbForm(data.forms, "1s_pres_actv_indc"), "saeviō")) {
                 this.add_forms(data, "impf_actv_indc", typeinfo.pres_stem,
                     ["iēbam", "ībam"],
                     ["iēbās", "ībās"],
@@ -400,15 +400,15 @@ export class LaVerb {
                 );
             }
 
-            if (typeinfo.subtypes.has("alwayssyncperf") || typeinfo.subtypes.has("optsyncperf")) {
-                data.forms.forEach((forms, key) => {
+            if (hasVerbType(typeinfo.subtypes, "alwayssyncperf") || hasVerbType(typeinfo.subtypes, "optsyncperf")) {
+                data.forms.forEach((forms: string[], key: VerbForm) => {
                     if (key.match(/perf/) || key.match(/plup/) || key.match(/futp/)) {
-                        data.forms.set(key, []);
+                        setVerbForm(data.forms, key, []);
                         for (const f of forms) {
-                            if (typeinfo.subtypes.has("optsyncperf")) {
-                                this.insert_if_not(data.forms.get(key) || [], f);
+                            if (hasVerbType(typeinfo.subtypes, "optsyncperf")) {
+                                this.insert_if_not(getVerbForm(data.forms, key) || [], f);
                             }
-                            this.insert_if_not(data.forms.get(key) || [], this.ivi_ive(f));
+                            this.insert_if_not(getVerbForm(data.forms, key) || [], this.ivi_ive(f));
                         }
                     }
                 });
@@ -551,9 +551,9 @@ export class LaVerb {
         return [non_generic_slots, generic_slots];
     }
 
-    private detect_decl_and_subtypes(args: ArgMap): [ConjType, ConjType | undefined, Set<string>, string, string] {
+    private detect_decl_and_subtypes(args: ArgMap): [ConjType, ConjType | undefined, Set<VerbType>, string, string] {
         const specs = args.get("1")?.split(".");
-        const subtypes = new Set<string>();
+        const subtypes = new Set<VerbType>();
         let conj_arg ="";
 
         if (!specs) {
@@ -569,7 +569,7 @@ export class LaVerb {
                 if (begins_with_hypen) {
                     spec = "-" + spec;
                 }
-                subtypes.add(spec);
+                addVerbType(subtypes, spec);
             }
         }
 
@@ -638,7 +638,7 @@ export class LaVerb {
                     ["it", ["impers"]],
                     ["itur", ["depon", "impers"]]
                 ]));
-                if (subtypes.has("I")) {
+                if (hasVerbType(subtypes, "I")) {
                     conjtype = "3rd-io";
                 } else {
                     conjtype = "3rd";
@@ -703,10 +703,10 @@ export class LaVerb {
         }
 
         for (const detected_subtype of detected_subtypes) {
-            if (detected_subtype == "impers" && subtypes.has("3only")) {
+            if (detected_subtype == "impers" && hasVerbType(subtypes, "3only")) {
                 // nothing to do
             } else {
-                subtypes.add(detected_subtype);
+                addVerbType(subtypes, detected_subtype);
             }
         }
 
@@ -714,14 +714,14 @@ export class LaVerb {
             args.set("1", base);
             let perf_stem = "";
             let supine_stem = "";
-            if (subtypes.has("depon") || subtypes.has("semidepon")) {
+            if (hasVerbType(subtypes, "depon") || hasVerbType(subtypes, "semidepon")) {
                 supine_stem = args.get("3") || auto_supine;
                 if (supine_stem == "-") {
                     supine_stem = "";
                 }
                 if (!supine_stem) {
-                    subtypes.add("noperf");
-                    subtypes.add("nosup");
+                    addVerbType(subtypes, "noperf");
+                    addVerbType(subtypes, "nosup");
                 }
                 args.set("2", supine_stem);
                 args.delete("3");
@@ -731,14 +731,14 @@ export class LaVerb {
                     perf_stem = "";
                 }
                 if (!perf_stem) {
-                    subtypes.add("noperf");
+                    addVerbType(subtypes, "noperf");
                 }
                 supine_stem = args.get("4") || auto_supine;
                 if (supine_stem == "-") {
                     supine_stem = "";
                 }
                 if (!supine_stem) {
-                    subtypes.add("nosup");
+                    addVerbType(subtypes, "nosup");
                 }
                 args.set("2", perf_stem);
                 args.set("3", supine_stem);
@@ -757,11 +757,11 @@ export class LaVerb {
         return [conjtype, conj_subtype, subtypes, orig_lemma, lemma];
     }
 
-    private get_subtype_by_ending(lemma: string, conjtype: string, specified_subtypes: Set<string>, endings_and_subtypes: FormMap): [string, string[]] {
+    private get_subtype_by_ending(lemma: string, conjtype: string, specified_subtypes: Set<VerbType>, endings_and_subtypes: FormMap<string>): [string, string[]] {
         for (const [ending, subtypes] of endings_and_subtypes) {
             let not_this_subtype = false;
             for (const subtype of subtypes) {
-                if (specified_subtypes.has(`-${subtype}`)) {
+                if (hasVerbType(specified_subtypes, `-${subtype}`)) {
                     not_this_subtype = true;
                     break;
                 }
@@ -796,7 +796,7 @@ export class LaVerb {
         let perf_stem = "";
         let supine_stem = "";
 
-        if (typeinfo.subtypes.has("depon") || typeinfo.subtypes.has("semidepon")) {
+        if (hasVerbType(typeinfo.subtypes, "depon") || hasVerbType(typeinfo.subtypes, "semidepon")) {
             pres_stem = this.ine(args.get("1"));
             perf_stem = "";
             supine_stem = this.ine(args.get("2"));
@@ -806,7 +806,7 @@ export class LaVerb {
             supine_stem = this.ine(args.get("3"));
         }
 
-        if (typeinfo.subtypes.has("perfaspres") && !pres_stem) {
+        if (hasVerbType(typeinfo.subtypes, "perfaspres") && !pres_stem) {
             pres_stem = "whatever";
         }
 
@@ -871,10 +871,11 @@ export class LaVerb {
         }
 
         for (const s of sufArr) {
-            if (!data.forms.has(key)) {
-                data.forms.set(key, []);
+            const form = getVerbForm(data.forms, key);
+            if (!form) {
+                setVerbForm(data.forms, key, []);
             }
-            this.insert_if_not(data.forms.get(key) || [], stem + s, pos);
+            this.insert_if_not(getVerbForm(data.forms, key) || [], stem + s, pos);
         }
     }
 
@@ -914,10 +915,10 @@ export class LaVerb {
         this.add_2_forms(data, "pres_pasv_impr", pres_stem, "āre", "āminī");
         this.add_23_forms(data, "futr_pasv_impr", pres_stem, "ātor", "ātor", [], "antor");
 
-        data.forms.set("pres_actv_inf", [pres_stem + "āre"]);
-        data.forms.set("pres_pasv_inf", [pres_stem + "ārī"]);
+        setVerbForm(data.forms, "pres_actv_inf", [pres_stem + "āre"]);
+        setVerbForm(data.forms, "pres_pasv_inf", [pres_stem + "ārī"]);
 
-        data.forms.set("pres_actv_ptc", [pres_stem + "āns"]);
+        setVerbForm(data.forms, "pres_actv_ptc", [pres_stem + "āns"]);
 
         this.make_gerund(data, typeinfo, pres_stem + "and");
     }
@@ -949,12 +950,12 @@ export class LaVerb {
             }
         }
 
-        data.forms.set("pres_actv_inf", [pres_stem + "ēre"]);
+        setVerbForm(data.forms, "pres_actv_inf", [pres_stem + "ēre"]);
         if (!nopass) {
-            data.forms.set("pres_pasv_inf", [pres_stem + "ērī"]);
+            setVerbForm(data.forms, "pres_pasv_inf", [pres_stem + "ērī"]);
         }
 
-        data.forms.set("pres_actv_ptc", [pres_stem + "ēns"]);
+        setVerbForm(data.forms, "pres_actv_ptc", [pres_stem + "ēns"]);
         this.make_gerund(data, typeinfo, pres_stem + "end", false, false, nopass);
     }
 
@@ -979,9 +980,9 @@ export class LaVerb {
         this.add_2_forms(data, "pres_pasv_impr", pres_stem, "ere", "iminī");
         this.add_23_forms(data, "futr_pasv_impr", pres_stem, "itor", "itor", [], "untor");
 
-        data.forms.set("pres_actv_inf", [pres_stem + "ere"]);
-        data.forms.set("pres_pasv_inf", [pres_stem + "ī"]);
-        data.forms.set("pres_actv_ptc", [pres_stem + "ēns"]);
+        setVerbForm(data.forms, "pres_actv_inf", [pres_stem + "ere"]);
+        setVerbForm(data.forms, "pres_pasv_inf", [pres_stem + "ī"]);
+        setVerbForm(data.forms, "pres_actv_ptc", [pres_stem + "ēns"]);
 
         this.make_gerund(data, typeinfo, pres_stem + "end", true);
     }
@@ -1009,12 +1010,12 @@ export class LaVerb {
             this.add_23_forms(data, "futr_pasv_impr", pres_stem, "itor", "itor", [], "iuntor");
         }
 
-        data.forms.set("pres_actv_inf", [pres_stem + "ere"]);
+        setVerbForm(data.forms, "pres_actv_inf", [pres_stem + "ere"]);
         if (!nopass) {
-            data.forms.set("pres_pasv_inf", [pres_stem + "ī"]);
+            setVerbForm(data.forms, "pres_pasv_inf", [pres_stem + "ī"]);
         }
 
-        data.forms.set("pres_actv_ptc", [pres_stem + "iēns"]);
+        setVerbForm(data.forms, "pres_actv_ptc", [pres_stem + "iēns"]);
         this.make_gerund(data, typeinfo, pres_stem + "iend", true, false, nopass);
     }
 
@@ -1039,15 +1040,15 @@ export class LaVerb {
         this.add_2_forms(data, "pres_pasv_impr", pres_stem, "īre", "īminī");
         this.add_23_forms(data, "futr_pasv_impr", pres_stem, "ītor", "ītor", [], "iuntor");
 
-        data.forms.set("pres_actv_inf", [pres_stem + "īre"]);
-        data.forms.set("pres_pasv_inf", [pres_stem + "īrī"]);
-        data.forms.set("pres_actv_ptc", [pres_stem + "iēns"]);
+        setVerbForm(data.forms, "pres_actv_inf", [pres_stem + "īre"]);
+        setVerbForm(data.forms, "pres_pasv_inf", [pres_stem + "īrī"]);
+        setVerbForm(data.forms, "pres_actv_ptc", [pres_stem + "iēns"]);
 
         this.make_gerund(data, typeinfo, pres_stem + "iend", true);
     }
 
     private make_perf_and_supine(data: ConjugationData, typeinfo: ConjugationInfo) {
-        if (typeinfo.subtypes.has("optsemidepon")) {
+        if (hasVerbType(typeinfo.subtypes, "optsemidepon")) {
             this.make_perf(data, typeinfo.perf_stem, "noinf");
             this.make_deponent_perf(data, typeinfo.supine_stem);
         } else {
@@ -1123,25 +1124,25 @@ export class LaVerb {
             let perf_pasv_ptc;
             let perf_pasv_ptc_acc;
             let futr_actv_ptc = stem + "ūrus";
-            if (typeinfo.subtypes.has("passimpers")) {
+            if (hasVerbType(typeinfo.subtypes, "passimpers")) {
                 perf_pasv_ptc_lemma = stem + "um";
                 perf_pasv_ptc = perf_pasv_ptc_lemma;
                 perf_pasv_ptc_acc = perf_pasv_ptc_lemma;
             } else {
                 perf_pasv_ptc_lemma = stem + "us";
-                if (typeinfo.subtypes.has("mp")) {
+                if (hasVerbType(typeinfo.subtypes, "mp")) {
                     perf_pasv_ptc = stem + "ī";
                     perf_pasv_ptc_acc = stem + "ōs";
-                } else if (typeinfo.subtypes.has("fp")) {
+                } else if (hasVerbType(typeinfo.subtypes, "fp")) {
                     perf_pasv_ptc = stem + "ae";
                     perf_pasv_ptc_acc = stem + "ās";
-                } else if (typeinfo.subtypes.has("np")) {
+                } else if (hasVerbType(typeinfo.subtypes, "np")) {
                     perf_pasv_ptc = stem + "a";
                     perf_pasv_ptc_acc = perf_pasv_ptc;
-                } else if (typeinfo.subtypes.has("f")) {
+                } else if (hasVerbType(typeinfo.subtypes, "f")) {
                     perf_pasv_ptc = stem + "a";
                     perf_pasv_ptc_acc = stem + "am";
-                } else if (typeinfo.subtypes.has("n")) {
+                } else if (hasVerbType(typeinfo.subtypes, "n")) {
                     perf_pasv_ptc = stem + "um";
                     perf_pasv_ptc_acc = perf_pasv_ptc;
                 } else {
@@ -1224,7 +1225,7 @@ export class LaVerb {
         };
 
         let endings: Endings;
-        if (typeinfo.subtypes.has("f")) {
+        if (hasVerbType(typeinfo.subtypes, "f")) {
             endings = {
                 nom: "a",
                 gen: "ae",
@@ -1232,9 +1233,9 @@ export class LaVerb {
                 acc: "am",
                 abl: "ā",
             };
-        } else if (typeinfo.subtypes.has("n")) {
+        } else if (hasVerbType(typeinfo.subtypes, "n")) {
             endings = neut_endings;
-        } else if (typeinfo.subtypes.has("mp")) {
+        } else if (hasVerbType(typeinfo.subtypes, "mp")) {
             endings = {
                 nom: "ī",
                 gen: "ōrum",
@@ -1242,7 +1243,7 @@ export class LaVerb {
                 acc: "ōs",
                 abl: "īs",
             };
-        } else if (typeinfo.subtypes.has("fp")) {
+        } else if (hasVerbType(typeinfo.subtypes, "fp")) {
             endings = {
                 nom: "ae",
                 gen: "ārum",
@@ -1250,7 +1251,7 @@ export class LaVerb {
                 acc: "ās",
                 abl: "īs",
             };
-        } else if (typeinfo.subtypes.has("np")) {
+        } else if (hasVerbType(typeinfo.subtypes, "np")) {
             endings = {
                 nom: "a",
                 gen: "ōrum",
@@ -1290,7 +1291,7 @@ export class LaVerb {
         for (let [cas, ending] of endingMap) {
             if (cas == "nom") {
                 if (!no_futr_pasv_ptc) {
-                    if (typeinfo.subtypes.has("passimpers")) {
+                    if (hasVerbType(typeinfo.subtypes, "passimpers")) {
                         ending = "um";
                     }
                     this.add_form(data, "futr_pasv_ptc", "", base + ending);
@@ -1343,31 +1344,31 @@ export class LaVerb {
     }
 
     private postprocess(data: ConjugationData, typeinfo: ConjugationInfo) {
-        if (typeinfo.subtypes.has("nosup")) {
+        if (hasVerbType(typeinfo.subtypes, "nosup")) {
             this.insert_if_not(data.categories, "Latin verbs with missing supine stem");
             this.insert_if_not(data.categories, "Latin defective verbs");
 
             for (const key of data.forms.keys()) {
                 if (key.match("sup") || (key == "perf_actv_ptc" || key == "perf_pasv_ptc" || key == "perf_pasv_inf" ||
                     key == "futr_actv_ptc" || key == "futr_actv_inf" || key == "futr_pasv_inf" ||
-                    ((typeinfo.subtypes.has("depon") || typeinfo.subtypes.has("semidepon") || typeinfo.subtypes.has("optsemidepon")) && key == "perf_actv_inf")))
+                    ((hasVerbType(typeinfo.subtypes, "depon") || hasVerbType(typeinfo.subtypes, "semidepon") || hasVerbType(typeinfo.subtypes, "optsemidepon")) && key == "perf_actv_inf")))
                 {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
-        } else if (typeinfo.subtypes.has("supfutractvonly")) {
+        } else if (hasVerbType(typeinfo.subtypes, "supfutractvonly")) {
             this.insert_if_not(data.categories, "Latin verbs with missing supine stem except in the future active participle");
             this.insert_if_not(data.categories, "Latin defective verbs");
             for (const key of data.forms.keys()) {
                 if (key.match("sup") || key == "perf_actv_ptc" || key == "perf_pasv_ptc" || key == "perf_pasv_inf" || key == "futr_pasv_inf") {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
         }
 
-        const perf_pasv_ptc = data.forms.get("perf_pasv_ptc");
+        const perf_pasv_ptc = getVerbForm(data.forms, "perf_pasv_ptc");
         if (perf_pasv_ptc && !this.form_is_empty(perf_pasv_ptc)) {
-            if (typeinfo.subtypes.has("passimpers")) {
+            if (hasVerbType(typeinfo.subtypes, "passimpers")) {
                 for (const ppp of perf_pasv_ptc) {
                     if (!this.form_is_empty([ppp])) {
                         this.add_form(data, "3s_perf_pasv_indc", ppp, " [[esse|est]]");
@@ -1377,21 +1378,21 @@ export class LaVerb {
                         this.add_form(data, "3s_plup_pasv_subj", ppp, [" [[esse|esset]]", " [[esse|foret]]"]);
                     }
                 }
-            } else if (typeinfo.subtypes.has("pass3only")) {
+            } else if (hasVerbType(typeinfo.subtypes, "pass3only")) {
                 for (const ppp of perf_pasv_ptc) {
                     if (!this.form_is_empty([ppp])) {
                         let ppp_s = "";
                         let ppp_p = "";
-                        if (typeinfo.subtypes.has("mp")) {
+                        if (hasVerbType(typeinfo.subtypes, "mp")) {
                             ppp_p = ppp;
-                        } else if (typeinfo.subtypes.has("fp")) {
+                        } else if (hasVerbType(typeinfo.subtypes, "fp")) {
                             ppp_p = ppp;
-                        } else if (typeinfo.subtypes.has("np")) {
+                        } else if (hasVerbType(typeinfo.subtypes, "np")) {
                             ppp_p = ppp;
-                        } else if (typeinfo.subtypes.has("f")) {
+                        } else if (hasVerbType(typeinfo.subtypes, "f")) {
                             ppp_s = ppp;
                             ppp_p = ppp.replace(/a$/, "ae");
-                        } else if (typeinfo.subtypes.has("n")) {
+                        } else if (hasVerbType(typeinfo.subtypes, "n")) {
                             ppp_s = ppp;
                             ppp_p = ppp.replace(/um$/, "a");
                         } else {
@@ -1399,7 +1400,7 @@ export class LaVerb {
                             ppp_p = ppp.replace(/us$/, "ī");
                         }
 
-                        if (!typeinfo.subtypes.has("mp") && !typeinfo.subtypes.has("fp") && !typeinfo.subtypes.has("np")) {
+                        if (!hasVerbType(typeinfo.subtypes, "mp") && !hasVerbType(typeinfo.subtypes, "fp") && !hasVerbType(typeinfo.subtypes, "np")) {
                             this.add_form(data, "3s_perf_pasv_indc", ppp_s, " [[esse|est]]");
                             this.add_form(data, "3s_futp_pasv_indc", ppp_s, " [[esse|erit]]");
                             this.add_form(data, "3s_plup_pasv_indc", ppp_s, " [[esse|erat]]");
@@ -1418,187 +1419,187 @@ export class LaVerb {
             }
         }
 
-        if (typeinfo.subtypes.has("perfaspres")) {
+        if (hasVerbType(typeinfo.subtypes, "perfaspres")) {
             this.insert_if_not(data.categories, "Latin defective verbs");
             this.insert_if_not(data.categories, "Latin active-only verbs");
             this.insert_if_not(data.categories, "Latin verbs with perfect forms having imperfective meanings");
 
-            data.forms.set("perf_actv_ptc", data.forms.get("perf_pasv_ptc") || []);
-            data.forms.set("pres_actv_inf", data.forms.get("perf_actv_inf") || []);
+            setVerbForm(data.forms, "perf_actv_ptc", getVerbForm(data.forms, "perf_pasv_ptc") || []);
+            setVerbForm(data.forms, "pres_actv_inf", getVerbForm(data.forms, "perf_actv_inf") || []);
 
             for (const key of data.forms.keys()) {
                 if (key != "futr_actv_inf" && key != "futr_actv_ptc") {
                     if (key.match(/pasv/) || (key.match(/pres/) && key != "pres_actv_inf") || key.match(/impf/) || key.match(/futr/)) {
-                        data.forms.set(key, []);
+                        setVerbForm(data.forms, key, []);
                     }
                 }
             }
 
             for (const [key, form] of data.forms) {
                 if (key.match(/perf/) && key != "perf_actv_ptc") {
-                    data.forms.set(key.replace(/perf/, "pres"), form);
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key.replace(/perf/, "pres"), form);
+                    setVerbForm(data.forms, key, []);
                 } else if (key.match(/plup/)) {
-                    data.forms.set(key.replace(/plup/, "impf"), form);
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key.replace(/plup/, "impf"), form);
+                    setVerbForm(data.forms, key, []);
                 } else if (key.match(/futp/)) {
-                    data.forms.set(key.replace(/futp/, "futr"), form);
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key.replace(/futp/, "futr"), form);
+                    setVerbForm(data.forms, key, []);
                 } else if (key.match(/ger/)) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
 
-            data.forms.set("pres_actv_ptc", []);
+            setVerbForm(data.forms, "pres_actv_ptc", []);
         }
 
-        if (typeinfo.subtypes.has("impers")) {
+        if (hasVerbType(typeinfo.subtypes, "impers")) {
             this.insert_if_not(data.categories, "Latin impersonal verbs");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/^[12][sp]/) || key.match(/^3p/)) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
-        } else if (typeinfo.subtypes.has("3only")) {
+        } else if (hasVerbType(typeinfo.subtypes, "3only")) {
             this.insert_if_not(data.categories, "Latin third-person-only verbs");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/^[12][sp]/)) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
         }
 
-        if (typeinfo.subtypes.has("nopasvperf") && !typeinfo.subtypes.has("nosup") && !typeinfo.subtypes.has("supfutractvonly")) {
+        if (hasVerbType(typeinfo.subtypes, "nopasvperf") && !hasVerbType(typeinfo.subtypes, "nosup") && !hasVerbType(typeinfo.subtypes, "supfutractvonly")) {
             this.insert_if_not(data.categories, "Latin defective verbs");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/pasv/) && (key.match(/perf/) || key.match(/plup/) || key.match(/futp/))) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
         }
 
-        if (typeinfo.subtypes.has("optsemidepon")) {
+        if (hasVerbType(typeinfo.subtypes, "optsemidepon")) {
             this.insert_if_not(data.categories, "Latin semi-deponent verbs");
             this.insert_if_not(data.categories, "Latin optionally semi-deponent verbs");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/pres_pasv/) || key.match(/impf_pasv/) || key.match(/futr_pasv/)) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
-        } else if (typeinfo.subtypes.has("semidepon")) {
+        } else if (hasVerbType(typeinfo.subtypes, "semidepon")) {
             this.insert_if_not(data.categories, "Latin semi-deponent verbs");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/perf_actv/) || key.match(/plup_actv/) || key.match(/futp_actv/) || key.match(/pres_pasv/) || key.match(/impf_pasv/) || key.match(/futr_pasv/)) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
 
             for (const [key, form] of data.forms) {
                 if (key.match(/perf_pasv/) || key.match(/plup_pasv/) || key.match(/futp_pasv/)) {
-                    data.forms.set(key.replace(/pasv/, "actv"), form);
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key.replace(/pasv/, "actv"), form);
+                    setVerbForm(data.forms, key, []);
                 }
             }
-        } else if (typeinfo.subtypes.has("depon")) {
+        } else if (hasVerbType(typeinfo.subtypes, "depon")) {
             this.insert_if_not(data.categories, "Latin deponent verbs");
 
             for (const key of data.forms.keys()) {
                 if ((key.match(/actv/) && key != "pres_actv_ptc" && key != "futr_actv_ptc" && key != "futr_actv_inf") || key == "futr_pasv_inf") {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
 
             for (const [key, form] of data.forms) {
                 if (key.match(/pasv/) && key != "pres_pasv_ptc" && key != "futr_pasv_ptc" && key != "futr_pasv_inf") {
-                    data.forms.set(key.replace(/pasv/, "actv"), form);
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key.replace(/pasv/, "actv"), form);
+                    setVerbForm(data.forms, key, []);
                 }
             }
         }
 
-        if (typeinfo.subtypes.has("noperf")) {
+        if (hasVerbType(typeinfo.subtypes, "noperf")) {
             this.insert_if_not(data.categories, "Latin verbs with missing perfect stem");
             this.insert_if_not(data.categories, "Latin defective verbs");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/actv/) && (key.match(/perf/) || key.match(/plup/) || key.match(/futp/))) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
         }
 
-        if (typeinfo.subtypes.has("nopass")) {
+        if (hasVerbType(typeinfo.subtypes, "nopass")) {
             this.insert_if_not(data.categories, "Latin active-only verbs");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/pasv/)) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
-        } else if (typeinfo.subtypes.has("pass3only")) {
+        } else if (hasVerbType(typeinfo.subtypes, "pass3only")) {
             this.insert_if_not(data.categories, "Latin verbs with third-person passive");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/pasv/) && (key.match(/^[12][sp]/) || key.match(/impr/))) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
 
-                if (typeinfo.subtypes.has("mp") || typeinfo.subtypes.has("fp") || typeinfo.subtypes.has("np")) {
+                if (hasVerbType(typeinfo.subtypes, "mp") || hasVerbType(typeinfo.subtypes, "fp") || hasVerbType(typeinfo.subtypes, "np")) {
                     if (key.match(/pasv/) && key.match(/^3s/)) {
-                        data.forms.set(key, []);
+                        setVerbForm(data.forms, key, []);
                     }
                 }
             }
-        } else if (typeinfo.subtypes.has("passimpers")) {
+        } else if (hasVerbType(typeinfo.subtypes, "passimpers")) {
             this.insert_if_not(data.categories, "Latin verbs with impersonal passive");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/pasv/) && (key.match(/^[12][sp]/) || key.match(/^3p/) || key.match(/impr/)) || key == "futr_pasv_inf") {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
         }
 
-        if (typeinfo.subtypes.has("noimp")) {
+        if (hasVerbType(typeinfo.subtypes, "noimp")) {
             this.insert_if_not(data.categories, "Latin verbs with missing imperative");
             this.insert_if_not(data.categories, "Latin defective verbs");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/impr/)) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
         }
 
-        if (typeinfo.subtypes.has("nofut")) {
+        if (hasVerbType(typeinfo.subtypes, "nofut")) {
             this.insert_if_not(data.categories, "Latin verbs with missing future");
             this.insert_if_not(data.categories, "Latin defective verbs");
 
             for (const key of data.forms.keys()) {
                 if (key.match(/fut/)) {
-                    data.forms.set(key, []);
+                    setVerbForm(data.forms, key, []);
                 }
             }
         }
 
-        if (typeinfo.subtypes.has("p3inf") && !this.options.suppressPoet) {
-            const is_depon = typeinfo.subtypes.has("depon");
+        if (hasVerbType(typeinfo.subtypes, "p3inf") && !this.options.suppressPoet) {
+            const is_depon = hasVerbType(typeinfo.subtypes, "depon");
             const form = "pres_" + (is_depon ? "actv" : "pasv") + "_inf";
-            const formval = data.forms.get(form) || [];
+            const formval = getVerbForm(data.forms, form) || [];
             const newvals = [...formval];
             for (const fv of formval) {
                 newvals.push(fv.replace(/^(.*).$/, "$1" + "ier"));
             }
-            data.forms.set(form, newvals);
+            setVerbForm(data.forms, form, newvals);
             data.footnotes.set(form, ["The present passive infinitive in -ier is a rare poetic form which is attested for this verb."]);
         }
 
-        if (typeinfo.subtypes.has("poetsyncperf") && !this.options.suppressPoet) {
+        if (hasVerbType(typeinfo.subtypes, "poetsyncperf") && !this.options.suppressPoet) {
             const sss: [string, string][] = [
                 ["perf_actv_inf", "sse"],
                 ["2s_perf_actv_indc", "stī"],
@@ -1612,7 +1613,7 @@ export class LaVerb {
             ];
 
             const add_sync_perf = (form: string, suff_sync: string) => {
-                const formval = data.forms.get(form) || [];
+                const formval = getVerbForm(data.forms, form) || [];
                 for (const fv of formval) {
                     const regex1 = new RegExp(`vi${suff_sync}$`);
                     const regex2 = new RegExp(`[aeiouyāēīōūȳăĕĭŏŭ]ui${suff_sync}$`);
@@ -1633,14 +1634,14 @@ export class LaVerb {
         if (this.options.suppressPassiveRe) {
             for (const slot of this.iter_slots(true, true)) {
                 if (slot.match(/^2s_/) && slot.match(/pasv/)) {
-                    const forms = data.forms.get(slot) || [];
+                    const forms = getVerbForm(data.forms, slot) || [];
                     const newForms: string[] = [];
                     for (const form of forms) {
                         if (!form.match(/re$/) || forms.length == 1) {
                             newForms.push(form);
                         }
                     }
-                    data.forms.set(slot, newForms);
+                    setVerbForm(data.forms, slot, newForms);
                 }
             }
         }
@@ -1659,7 +1660,7 @@ export class LaVerb {
     }
 
     private make_perfect_passive(data: ConjugationData) {
-        const ppp = data.forms.get("perf_pasv_ptc") || [];
+        const ppp = getVerbForm(data.forms, "perf_pasv_ptc") || [];
         const ppplinks: string[] = [];
         for (const pppform of ppp) {
             ppplinks.push(`[[${pppform}]]`);
@@ -1694,7 +1695,7 @@ export class LaVerb {
                             text + " of " + sumlink +
                             suffix_joiner +
                             (passiveSuffix || "");
-            data.forms.set(slot, [entry]);
+            setVerbForm(data.forms, slot, [entry]);
         }
     }
 
@@ -1702,7 +1703,7 @@ export class LaVerb {
         for (const slot of this.iter_slots(true, false)) {
             const arg = args.get(slot);
             if (arg) {
-                data.forms.set(slot, arg.split("/"));
+                setVerbForm(data.forms, slot, arg.split("/"));
             }
         }
     }
@@ -1758,7 +1759,7 @@ export class LaVerb {
                     suffix_no_links = active_suffix_no_links;
                 }
 
-                const forms = data.forms.get(slot) || [];
+                const forms = getVerbForm(data.forms, slot) || [];
                 if (!this.form_is_empty(forms)) {
                     const affixed_forms = [];
                     for (const form of forms) {
@@ -1768,7 +1769,7 @@ export class LaVerb {
                             affixed_forms.push(prefix_no_links + form + suffix_no_links);
                         }
                     }
-                    data.forms.set(slot, affixed_forms);
+                    setVerbForm(data.forms, slot, affixed_forms);
                 }
             }
         }
@@ -1777,7 +1778,7 @@ export class LaVerb {
     private set_linked_forms(data: ConjugationData, typeinfo: ConjugationInfo) {
         for (const slot of this.potential_lemma_slots) {
             const linked_forms: string[] = [];
-            const forms = data.forms.get(slot);
+            const forms = getVerbForm(data.forms, slot);
             if (forms) {
                 for (const form of forms) {
                     if (form == typeinfo.lemma) {
@@ -1787,7 +1788,7 @@ export class LaVerb {
                     }
                 }
             }
-            data.forms.set("linked_" + slot, linked_forms);
+            setVerbForm(data.forms, "linked_" + slot, linked_forms);
         }
     }
 
@@ -1799,33 +1800,33 @@ export class LaVerb {
             data.categories.push("Latin active-only verbs");
             data.categories.push("Latin defective verbs");
 
-            typeinfo.subtypes.add("irreg");
-            typeinfo.subtypes.add("highlydef");
+            addVerbType(typeinfo.subtypes, "irreg");
+            addVerbType(typeinfo.subtypes, "highlydef");
 
             const prefix = typeinfo.prefix;
-            data.forms.set("1s_pres_actv_indc", [prefix + "aiō"]);
-            data.forms.set("2s_pres_actv_indc", [prefix + "ais"]);
-            data.forms.set("3s_pres_actv_indc", [prefix + "ait"]);
-            data.forms.set("3p_pres_actv_indc", [prefix + "aiunt"]);
+            setVerbForm(data.forms, "1s_pres_actv_indc", [prefix + "aiō"]);
+            setVerbForm(data.forms, "2s_pres_actv_indc", [prefix + "ais"]);
+            setVerbForm(data.forms, "3s_pres_actv_indc", [prefix + "ait"]);
+            setVerbForm(data.forms, "3p_pres_actv_indc", [prefix + "aiunt"]);
 
-            data.forms.set("1s_impf_actv_indc", [prefix + "aiēbam"]);
-            data.forms.set("2s_impf_actv_indc", [prefix + "aiēbās"]);
-            data.forms.set("3s_impf_actv_indc", [prefix + "aiēbat"]);
-            data.forms.set("1p_impf_actv_indc", [prefix + "aiēbāmus"]);
-            data.forms.set("2p_impf_actv_indc", [prefix + "aiēbātis"]);
-            data.forms.set("3p_impf_actv_indc", [prefix + "aiēbant"]);
+            setVerbForm(data.forms, "1s_impf_actv_indc", [prefix + "aiēbam"]);
+            setVerbForm(data.forms, "2s_impf_actv_indc", [prefix + "aiēbās"]);
+            setVerbForm(data.forms, "3s_impf_actv_indc", [prefix + "aiēbat"]);
+            setVerbForm(data.forms, "1p_impf_actv_indc", [prefix + "aiēbāmus"]);
+            setVerbForm(data.forms, "2p_impf_actv_indc", [prefix + "aiēbātis"]);
+            setVerbForm(data.forms, "3p_impf_actv_indc", [prefix + "aiēbant"]);
 
-            data.forms.set("2s_perf_actv_indc", [prefix + "aistī"]);
-            data.forms.set("3s_perf_actv_indc", [prefix + "ait"]);
+            setVerbForm(data.forms, "2s_perf_actv_indc", [prefix + "aistī"]);
+            setVerbForm(data.forms, "3s_perf_actv_indc", [prefix + "ait"]);
 
-            data.forms.set("2s_pres_actv_subj", [prefix + "aiās"]);
-            data.forms.set("3s_pres_actv_subj", [prefix + "aiat"]);
-            data.forms.set("3p_pres_actv_subj", [prefix + "aiant"]);
+            setVerbForm(data.forms, "2s_pres_actv_subj", [prefix + "aiās"]);
+            setVerbForm(data.forms, "3s_pres_actv_subj", [prefix + "aiat"]);
+            setVerbForm(data.forms, "3p_pres_actv_subj", [prefix + "aiant"]);
 
-            data.forms.set("2s_pres_actv_impr", [prefix + "ai"]);
+            setVerbForm(data.forms, "2s_pres_actv_impr", [prefix + "ai"]);
 
-            data.forms.set("pres_actv_inf", [prefix + "aiere"]);
-            data.forms.set("pres_actv_ptc", [prefix + "aiēns"]);
+            setVerbForm(data.forms, "pres_actv_inf", [prefix + "aiere"]);
+            setVerbForm(data.forms, "pres_actv_ptc", [prefix + "aiēns"]);
         });
 
         this.irreg_conjugations.set("aiio", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
@@ -1834,33 +1835,33 @@ export class LaVerb {
             data.categories.push("Latin active-only verbs");
             data.categories.push("Latin defective verbs");
 
-            typeinfo.subtypes.add("irreg");
-            typeinfo.subtypes.add("highlydef");
+            addVerbType(typeinfo.subtypes, "irreg");
+            addVerbType(typeinfo.subtypes, "highlydef");
 
             const prefix = typeinfo.prefix;
-            data.forms.set("1s_pres_actv_indc", [prefix + "aiiō"]);
-            data.forms.set("2s_pres_actv_indc", [prefix + "ais"]);
-            data.forms.set("3s_pres_actv_indc", [prefix + "ait"]);
-            data.forms.set("3p_pres_actv_indc", [prefix + "aiunt"]);
+            setVerbForm(data.forms, "1s_pres_actv_indc", [prefix + "aiiō"]);
+            setVerbForm(data.forms, "2s_pres_actv_indc", [prefix + "ais"]);
+            setVerbForm(data.forms, "3s_pres_actv_indc", [prefix + "ait"]);
+            setVerbForm(data.forms, "3p_pres_actv_indc", [prefix + "aiunt"]);
 
-            data.forms.set("1s_impf_actv_indc", [prefix + "aiiēbam"]);
-            data.forms.set("2s_impf_actv_indc", [prefix + "aiiēbās"]);
-            data.forms.set("3s_impf_actv_indc", [prefix + "aiiēbat"]);
-            data.forms.set("1p_impf_actv_indc", [prefix + "aiiēbāmus"]);
-            data.forms.set("2p_impf_actv_indc", [prefix + "aiiēbātis"]);
-            data.forms.set("3p_impf_actv_indc", [prefix + "aiiēbant"]);
+            setVerbForm(data.forms, "1s_impf_actv_indc", [prefix + "aiiēbam"]);
+            setVerbForm(data.forms, "2s_impf_actv_indc", [prefix + "aiiēbās"]);
+            setVerbForm(data.forms, "3s_impf_actv_indc", [prefix + "aiiēbat"]);
+            setVerbForm(data.forms, "1p_impf_actv_indc", [prefix + "aiiēbāmus"]);
+            setVerbForm(data.forms, "2p_impf_actv_indc", [prefix + "aiiēbātis"]);
+            setVerbForm(data.forms, "3p_impf_actv_indc", [prefix + "aiiēbant"]);
 
-            data.forms.set("2s_perf_actv_indc", [prefix + "aistī"]);
-            data.forms.set("3s_perf_actv_indc", [prefix + "ait"]);
+            setVerbForm(data.forms, "2s_perf_actv_indc", [prefix + "aistī"]);
+            setVerbForm(data.forms, "3s_perf_actv_indc", [prefix + "ait"]);
 
-            data.forms.set("2s_pres_actv_subj", [prefix + "aiiās"]);
-            data.forms.set("3s_pres_actv_subj", [prefix + "aiiat"]);
-            data.forms.set("3p_pres_actv_subj", [prefix + "aiiant"]);
+            setVerbForm(data.forms, "2s_pres_actv_subj", [prefix + "aiiās"]);
+            setVerbForm(data.forms, "3s_pres_actv_subj", [prefix + "aiiat"]);
+            setVerbForm(data.forms, "3p_pres_actv_subj", [prefix + "aiiant"]);
 
-            data.forms.set("2s_pres_actv_impr", [prefix + "ai"]);
+            setVerbForm(data.forms, "2s_pres_actv_impr", [prefix + "ai"]);
 
-            data.forms.set("pres_actv_inf", [prefix + "aiiere"]);
-            data.forms.set("pres_actv_ptc", [prefix + "aiiēns"]);
+            setVerbForm(data.forms, "pres_actv_inf", [prefix + "aiiere"]);
+            setVerbForm(data.forms, "pres_actv_ptc", [prefix + "aiiēns"]);
         });
 
         this.irreg_conjugations.set("ajo", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
@@ -1869,33 +1870,33 @@ export class LaVerb {
             data.categories.push("Latin active-only verbs");
             data.categories.push("Latin defective verbs");
 
-            typeinfo.subtypes.add("irreg");
-            typeinfo.subtypes.add("highlydef");
+            addVerbType(typeinfo.subtypes, "irreg");
+            addVerbType(typeinfo.subtypes, "highlydef");
 
             const prefix = typeinfo.prefix;
-            data.forms.set("1s_pres_actv_indc", [prefix + "ajō"]);
-            data.forms.set("2s_pres_actv_indc", [prefix + "ais"]);
-            data.forms.set("3s_pres_actv_indc", [prefix + "ait"]);
-            data.forms.set("3p_pres_actv_indc", [prefix + "ajunt"]);
+            setVerbForm(data.forms, "1s_pres_actv_indc", [prefix + "ajō"]);
+            setVerbForm(data.forms, "2s_pres_actv_indc", [prefix + "ais"]);
+            setVerbForm(data.forms, "3s_pres_actv_indc", [prefix + "ait"]);
+            setVerbForm(data.forms, "3p_pres_actv_indc", [prefix + "ajunt"]);
 
-            data.forms.set("1s_impf_actv_indc", [prefix + "ajēbam"]);
-            data.forms.set("2s_impf_actv_indc", [prefix + "ajēbās"]);
-            data.forms.set("3s_impf_actv_indc", [prefix + "ajēbat"]);
-            data.forms.set("1p_impf_actv_indc", [prefix + "ajēbāmus"]);
-            data.forms.set("2p_impf_actv_indc", [prefix + "ajēbātis"]);
-            data.forms.set("3p_impf_actv_indc", [prefix + "ajēbant"]);
+            setVerbForm(data.forms, "1s_impf_actv_indc", [prefix + "ajēbam"]);
+            setVerbForm(data.forms, "2s_impf_actv_indc", [prefix + "ajēbās"]);
+            setVerbForm(data.forms, "3s_impf_actv_indc", [prefix + "ajēbat"]);
+            setVerbForm(data.forms, "1p_impf_actv_indc", [prefix + "ajēbāmus"]);
+            setVerbForm(data.forms, "2p_impf_actv_indc", [prefix + "ajēbātis"]);
+            setVerbForm(data.forms, "3p_impf_actv_indc", [prefix + "ajēbant"]);
 
-            data.forms.set("2s_perf_actv_indc", [prefix + "aistī"]);
-            data.forms.set("3s_perf_actv_indc", [prefix + "ait"]);
+            setVerbForm(data.forms, "2s_perf_actv_indc", [prefix + "aistī"]);
+            setVerbForm(data.forms, "3s_perf_actv_indc", [prefix + "ait"]);
 
-            data.forms.set("2s_pres_actv_subj", [prefix + "ajās"]);
-            data.forms.set("3s_pres_actv_subj", [prefix + "ajat"]);
-            data.forms.set("3p_pres_actv_subj", [prefix + "ajant"]);
+            setVerbForm(data.forms, "2s_pres_actv_subj", [prefix + "ajās"]);
+            setVerbForm(data.forms, "3s_pres_actv_subj", [prefix + "ajat"]);
+            setVerbForm(data.forms, "3p_pres_actv_subj", [prefix + "ajant"]);
 
-            data.forms.set("2s_pres_actv_impr", [prefix + "ai"]);
+            setVerbForm(data.forms, "2s_pres_actv_impr", [prefix + "ai"]);
 
-            data.forms.set("pres_actv_inf", [prefix + "ajere"]);
-            data.forms.set("pres_actv_ptc", [prefix + "ajēns"]);
+            setVerbForm(data.forms, "pres_actv_inf", [prefix + "ajere"]);
+            setVerbForm(data.forms, "pres_actv_ptc", [prefix + "ajēns"]);
         });
 
         this.irreg_conjugations.set("dico", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
@@ -1914,7 +1915,7 @@ export class LaVerb {
             data.categories.push("Latin first conjugation verbs");
             data.categories.push("Latin irregular verbs");
 
-            typeinfo.subtypes.add("irreg");
+            addVerbType(typeinfo.subtypes, "irreg");
             const prefix = typeinfo.prefix;
 
             this.make_perf(data, [prefix + "ded"]);
@@ -1940,10 +1941,10 @@ export class LaVerb {
             this.add_2_forms(data, "pres_pasv_impr", prefix, "dare", "daminī");
             this.add_23_forms(data, "futr_pasv_impr", prefix, "dator", "dator", [], "dantor");
 
-            data.forms.set("pres_actv_inf", [prefix + "dare"]);
-            data.forms.set("pres_pasv_inf", [prefix + "darī"]);
+            setVerbForm(data.forms, "pres_actv_inf", [prefix + "dare"]);
+            setVerbForm(data.forms, "pres_pasv_inf", [prefix + "darī"]);
 
-            data.forms.set("pres_actv_ptc", [prefix + "dāns"]);
+            setVerbForm(data.forms, "pres_actv_ptc", [prefix + "dāns"]);
 
             this.make_gerund(data, typeinfo, prefix + "dand");
         });
@@ -1964,7 +1965,7 @@ export class LaVerb {
             data.categories.push("Latin third conjugation verbs");
             data.categories.push("Latin irregular verbs");
 
-            typeinfo.subtypes.add("irreg");
+            addVerbType(typeinfo.subtypes, "irreg");
 
             const prefix = typeinfo.prefix;
             this.make_pres_3rd(data, typeinfo, prefix + "ed");
@@ -1996,9 +1997,9 @@ export class LaVerb {
             this.add_forms(data, "futr_actv_indc", prefix, "ībō", "ībis", "ībit", "ībimus", "ībitis", "ībunt");
 
             this.add_form(data, "1s_perf_actv_indc", prefix, "īvī");
-            data.forms.set("2s_perf_actv_indc", [prefix + "īstī", prefix + "īvistī"]);
+            setVerbForm(data.forms, "2s_perf_actv_indc", [prefix + "īstī", prefix + "īvistī"]);
             this.add_form(data, "3s_perf_actv_indc", prefix, "īvit");
-            data.forms.set("2p_perf_actv_indc", [prefix + "īstis"]);
+            setVerbForm(data.forms, "2p_perf_actv_indc", [prefix + "īstis"]);
 
             this.add_forms(data, "pres_pasv_indc", prefix, "eor", ["īris", "īre"], "ītur", "īmur", "īminī", "euntur");
             this.add_forms(data, "impf_pasv_indc", prefix, "ībar", ["ībāris", "ībāre"], "ībātur", "ībāmur", "ībāminī", "ībantur");
@@ -2007,12 +2008,12 @@ export class LaVerb {
             this.add_forms(data, "pres_actv_subj", prefix, "eam", "eās", "eat", "eāmus", "eātis", "eant");
             this.add_forms(data, "impf_actv_subj", prefix, "īrem", "īrēs", "īret", "īrēmus", "īrētis", "īrent");
 
-            data.forms.set("1s_plup_actv_subj", [prefix + "īssem"]);
-            data.forms.set("2s_plup_actv_subj", [prefix + "īssēs"]);
-            data.forms.set("3s_plup_actv_subj", [prefix + "īsset"]);
-            data.forms.set("1p_plup_actv_subj", [prefix + "īssēmus"]);
-            data.forms.set("2p_plup_actv_subj", [prefix + "īssētis"]);
-            data.forms.set("3p_plup_actv_subj", [prefix + "īssent"]);
+            setVerbForm(data.forms, "1s_plup_actv_subj", [prefix + "īssem"]);
+            setVerbForm(data.forms, "2s_plup_actv_subj", [prefix + "īssēs"]);
+            setVerbForm(data.forms, "3s_plup_actv_subj", [prefix + "īsset"]);
+            setVerbForm(data.forms, "1p_plup_actv_subj", [prefix + "īssēmus"]);
+            setVerbForm(data.forms, "2p_plup_actv_subj", [prefix + "īssētis"]);
+            setVerbForm(data.forms, "3p_plup_actv_subj", [prefix + "īssent"]);
 
             this.add_forms(data, "pres_pasv_subj", prefix, "ear", ["eāris", "eāre"], "eātur", "eāmur", "eāminī", "eantur");
             this.add_forms(data, "impf_pasv_subj", prefix, "īrer", ["īrēris", "īrēre"], "īrētur", "īrēmur", "īrēminī", "īrentur");
@@ -2023,11 +2024,11 @@ export class LaVerb {
             this.add_2_forms(data, "pres_pasv_impr", prefix, "īre", "īminī");
             this.add_23_forms(data, "futr_pasv_impr", prefix, "ītor", "ītor", [], "euntor");
 
-            data.forms.set("pres_actv_inf", [prefix + "īre"]);
-            data.forms.set("pres_pasv_inf", [prefix + "īrī"]);
+            setVerbForm(data.forms, "pres_actv_inf", [prefix + "īre"]);
+            setVerbForm(data.forms, "pres_pasv_inf", [prefix + "īrī"]);
 
-            data.forms.set("perf_actv_inf", [prefix + "īsse"]);
-            data.forms.set("pres_actv_ptc", [prefix + "iēns"]);
+            setVerbForm(data.forms, "perf_actv_inf", [prefix + "īsse"]);
+            setVerbForm(data.forms, "pres_actv_ptc", [prefix + "iēns"]);
 
             this.make_gerund(data, typeinfo, prefix + "eund");
         });
@@ -2057,14 +2058,14 @@ export class LaVerb {
 
             const prefix = typeinfo.prefix;
 
-            typeinfo.subtypes.add("semidepon");
+            addVerbType(typeinfo.subtypes, "semidepon");
             this.fio(data, prefix, "actv");
 
             this.make_supine(data, typeinfo, [prefix + "fact"]);
 
-            data.forms.set("futr_actv_inf", data.forms.get("futr_pasv_inf") || []);
-            data.forms.set("pres_actv_ptc", []);
-            data.forms.set("futr_actv_ptc", []);
+            setVerbForm(data.forms, "futr_actv_inf", getVerbForm(data.forms, "futr_pasv_inf") || []);
+            setVerbForm(data.forms, "pres_actv_ptc", []);
+            setVerbForm(data.forms, "futr_actv_ptc", []);
 
             this.make_gerund(data, typeinfo, prefix + "fiend", true);
         });
@@ -2074,7 +2075,7 @@ export class LaVerb {
             data.categories.push("Latin irregular verbs");
             data.categories.push("Latin suppletive verbs");
 
-            typeinfo.subtypes.add("irreg");
+            addVerbType(typeinfo.subtypes, "irreg");
 
             const prefix_pres = typeinfo.prefix;
             let prefix_perf = this.ine(args.get("3"));
@@ -2096,73 +2097,73 @@ export class LaVerb {
             }
             this.make_supine(data, typeinfo, [prefix_supine + "lāt"]);
 
-            data.forms.set("2s_pres_actv_indc", [prefix_pres + "fers"]);
-            data.forms.set("3s_pres_actv_indc", [prefix_pres + "fert"]);
-            data.forms.set("2p_pres_actv_indc", [prefix_pres + "fertis"]);
+            setVerbForm(data.forms, "2s_pres_actv_indc", [prefix_pres + "fers"]);
+            setVerbForm(data.forms, "3s_pres_actv_indc", [prefix_pres + "fert"]);
+            setVerbForm(data.forms, "2p_pres_actv_indc", [prefix_pres + "fertis"]);
 
-            data.forms.set("3s_pres_pasv_indc", [prefix_pres + "fertur"]);
+            setVerbForm(data.forms, "3s_pres_pasv_indc", [prefix_pres + "fertur"]);
 
-            data.forms.set("1s_impf_actv_subj", [prefix_pres + "ferrem"]);
-            data.forms.set("2s_impf_actv_subj", [prefix_pres + "ferrēs"]);
-            data.forms.set("3s_impf_actv_subj", [prefix_pres + "ferret"]);
-            data.forms.set("1p_impf_actv_subj", [prefix_pres + "ferrēmus"]);
-            data.forms.set("2p_impf_actv_subj", [prefix_pres + "ferrētis"]);
-            data.forms.set("3p_impf_actv_subj", [prefix_pres + "ferrent"]);
+            setVerbForm(data.forms, "1s_impf_actv_subj", [prefix_pres + "ferrem"]);
+            setVerbForm(data.forms, "2s_impf_actv_subj", [prefix_pres + "ferrēs"]);
+            setVerbForm(data.forms, "3s_impf_actv_subj", [prefix_pres + "ferret"]);
+            setVerbForm(data.forms, "1p_impf_actv_subj", [prefix_pres + "ferrēmus"]);
+            setVerbForm(data.forms, "2p_impf_actv_subj", [prefix_pres + "ferrētis"]);
+            setVerbForm(data.forms, "3p_impf_actv_subj", [prefix_pres + "ferrent"]);
 
-            data.forms.set("2s_pres_pasv_indc", [prefix_pres + "ferris", prefix_pres + "ferre"]);
+            setVerbForm(data.forms, "2s_pres_pasv_indc", [prefix_pres + "ferris", prefix_pres + "ferre"]);
 
-            data.forms.set("1s_impf_pasv_subj", [prefix_pres + "ferrer"]);
-            data.forms.set("2s_impf_pasv_subj", [prefix_pres + "ferrēris", prefix_pres + "ferrēre"]);
-            data.forms.set("3s_impf_pasv_subj", [prefix_pres + "ferrētur"]);
-            data.forms.set("1p_impf_pasv_subj", [prefix_pres + "ferrēmur"]);
-            data.forms.set("2p_impf_pasv_subj", [prefix_pres + "ferrēminī"]);
-            data.forms.set("3p_impf_pasv_subj", [prefix_pres + "ferrentur"]);
+            setVerbForm(data.forms, "1s_impf_pasv_subj", [prefix_pres + "ferrer"]);
+            setVerbForm(data.forms, "2s_impf_pasv_subj", [prefix_pres + "ferrēris", prefix_pres + "ferrēre"]);
+            setVerbForm(data.forms, "3s_impf_pasv_subj", [prefix_pres + "ferrētur"]);
+            setVerbForm(data.forms, "1p_impf_pasv_subj", [prefix_pres + "ferrēmur"]);
+            setVerbForm(data.forms, "2p_impf_pasv_subj", [prefix_pres + "ferrēminī"]);
+            setVerbForm(data.forms, "3p_impf_pasv_subj", [prefix_pres + "ferrentur"]);
 
-            data.forms.set("2s_pres_actv_impr", [prefix_pres + "fer"]);
-            data.forms.set("2p_pres_actv_impr", [prefix_pres + "ferte"]);
+            setVerbForm(data.forms, "2s_pres_actv_impr", [prefix_pres + "fer"]);
+            setVerbForm(data.forms, "2p_pres_actv_impr", [prefix_pres + "ferte"]);
 
-            data.forms.set("2s_futr_actv_impr", [prefix_pres + "fertō"]);
-            data.forms.set("3s_futr_actv_impr", [prefix_pres + "fertō"]);
-            data.forms.set("2p_futr_actv_impr", [prefix_pres + "fertōte"]);
+            setVerbForm(data.forms, "2s_futr_actv_impr", [prefix_pres + "fertō"]);
+            setVerbForm(data.forms, "3s_futr_actv_impr", [prefix_pres + "fertō"]);
+            setVerbForm(data.forms, "2p_futr_actv_impr", [prefix_pres + "fertōte"]);
 
-            data.forms.set("2s_pres_pasv_impr", [prefix_pres + "ferre"]);
+            setVerbForm(data.forms, "2s_pres_pasv_impr", [prefix_pres + "ferre"]);
 
-            data.forms.set("2s_futr_pasv_impr", [prefix_pres + "fertor"]);
-            data.forms.set("3s_futr_pasv_impr", [prefix_pres + "fertor"]);
+            setVerbForm(data.forms, "2s_futr_pasv_impr", [prefix_pres + "fertor"]);
+            setVerbForm(data.forms, "3s_futr_pasv_impr", [prefix_pres + "fertor"]);
 
-            data.forms.set("pres_actv_inf", [prefix_pres + "ferre"]);
-            data.forms.set("pres_pasv_inf", [prefix_pres + "ferrī"]);
+            setVerbForm(data.forms, "pres_actv_inf", [prefix_pres + "ferre"]);
+            setVerbForm(data.forms, "pres_pasv_inf", [prefix_pres + "ferrī"]);
         });
 
         this.irreg_conjugations.set("inquam", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
             data.categories.push("Latin irregular verbs");
             data.categories.push("Latin defective verbs");
 
-            typeinfo.subtypes.add("highlydef");
+            addVerbType(typeinfo.subtypes, "highlydef");
 
-            data.forms.set("1s_pres_actv_indc", ["inquam"]);
-            data.forms.set("2s_pres_actv_indc", ["inquis"]);
-            data.forms.set("3s_pres_actv_indc", ["inquit"]);
-            data.forms.set("1p_pres_actv_indc", ["inquimus"]);
-            data.forms.set("2p_pres_actv_indc", ["inquitis"]);
-            data.forms.set("3p_pres_actv_indc", ["inquiunt"]);
+            setVerbForm(data.forms, "1s_pres_actv_indc", ["inquam"]);
+            setVerbForm(data.forms, "2s_pres_actv_indc", ["inquis"]);
+            setVerbForm(data.forms, "3s_pres_actv_indc", ["inquit"]);
+            setVerbForm(data.forms, "1p_pres_actv_indc", ["inquimus"]);
+            setVerbForm(data.forms, "2p_pres_actv_indc", ["inquitis"]);
+            setVerbForm(data.forms, "3p_pres_actv_indc", ["inquiunt"]);
 
-            data.forms.set("2s_futr_actv_indc", ["inquiēs"]);
-            data.forms.set("3s_futr_actv_indc", ["inquiet"]);
+            setVerbForm(data.forms, "2s_futr_actv_indc", ["inquiēs"]);
+            setVerbForm(data.forms, "3s_futr_actv_indc", ["inquiet"]);
 
-            data.forms.set("3s_impf_actv_indc", ["inquiēbat"]);
+            setVerbForm(data.forms, "3s_impf_actv_indc", ["inquiēbat"]);
 
-            data.forms.set("1s_perf_actv_indc", ["inquiī"]);
-            data.forms.set("2s_perf_actv_indc", ["inquistī"]);
-            data.forms.set("3s_perf_actv_indc", ["inquit"]);
+            setVerbForm(data.forms, "1s_perf_actv_indc", ["inquiī"]);
+            setVerbForm(data.forms, "2s_perf_actv_indc", ["inquistī"]);
+            setVerbForm(data.forms, "3s_perf_actv_indc", ["inquit"]);
 
-            data.forms.set("3s_pres_actv_subj", ["inquiat"]);
+            setVerbForm(data.forms, "3s_pres_actv_subj", ["inquiat"]);
 
-            data.forms.set("2s_pres_actv_impr", ["inque"]);
-            data.forms.set("2s_futr_actv_impr", ["inquitō"]);
-            data.forms.set("3s_futr_actv_impr", ["inquitō"]);
+            setVerbForm(data.forms, "2s_pres_actv_impr", ["inque"]);
+            setVerbForm(data.forms, "2s_futr_actv_impr", ["inquitō"]);
+            setVerbForm(data.forms, "3s_futr_actv_impr", ["inquitō"]);
 
-            data.forms.set("pres_actv_ptc", ["inquiēns"]);
+            setVerbForm(data.forms, "pres_actv_ptc", ["inquiēns"]);
         });
 
 
@@ -2178,41 +2179,41 @@ export class LaVerb {
             data.categories.push("Latin second conjugation verbs");
             data.categories.push("Latin impersonal verbs");
 
-            typeinfo.subtypes.add("nopass");
+            addVerbType(typeinfo.subtypes, "nopass");
 
-            data.forms.set("3s_pres_actv_indc", ["licet"]);
-            data.forms.set("3p_pres_actv_indc", ["licent"]);
+            setVerbForm(data.forms, "3s_pres_actv_indc", ["licet"]);
+            setVerbForm(data.forms, "3p_pres_actv_indc", ["licent"]);
 
-            data.forms.set("3s_impf_actv_indc", ["licēbat"]);
-            data.forms.set("3p_impf_actv_indc", ["licēbant"]);
+            setVerbForm(data.forms, "3s_impf_actv_indc", ["licēbat"]);
+            setVerbForm(data.forms, "3p_impf_actv_indc", ["licēbant"]);
 
-            data.forms.set("3s_futr_actv_indc", ["licēbit"]);
+            setVerbForm(data.forms, "3s_futr_actv_indc", ["licēbit"]);
 
-            data.forms.set("3s_perf_actv_indc", ["licuit", "licitum [[esse|est]]"]);
+            setVerbForm(data.forms, "3s_perf_actv_indc", ["licuit", "licitum [[esse|est]]"]);
 
-            data.forms.set("3s_plup_actv_indc", ["licuerat", "licitum [[esse|erat]]"]);
+            setVerbForm(data.forms, "3s_plup_actv_indc", ["licuerat", "licitum [[esse|erat]]"]);
 
-            data.forms.set("3s_futp_actv_indc", ["licuerit", "licitum [[esse|erit]]"]);
+            setVerbForm(data.forms, "3s_futp_actv_indc", ["licuerit", "licitum [[esse|erit]]"]);
 
-            data.forms.set("3s_pres_actv_subj", ["liceat"]);
-            data.forms.set("3p_pres_actv_subj", ["liceant"]);
+            setVerbForm(data.forms, "3s_pres_actv_subj", ["liceat"]);
+            setVerbForm(data.forms, "3p_pres_actv_subj", ["liceant"]);
 
-            data.forms.set("3s_impf_actv_subj", ["licēret"]);
+            setVerbForm(data.forms, "3s_impf_actv_subj", ["licēret"]);
 
-            data.forms.set("3s_perf_actv_subj", ["licuerit", "licitum [[esse|sit]]"]);
+            setVerbForm(data.forms, "3s_perf_actv_subj", ["licuerit", "licitum [[esse|sit]]"]);
 
-            data.forms.set("3s_plup_actv_subj", ["licuisset", "licitum [[esse|esset]]"]);
+            setVerbForm(data.forms, "3s_plup_actv_subj", ["licuisset", "licitum [[esse|esset]]"]);
 
-            data.forms.set("2s_futr_actv_impr", ["licētō"]);
-            data.forms.set("3s_futr_actv_impr", ["licētō"]);
+            setVerbForm(data.forms, "2s_futr_actv_impr", ["licētō"]);
+            setVerbForm(data.forms, "3s_futr_actv_impr", ["licētō"]);
 
-            data.forms.set("pres_actv_inf", ["licēre"]);
-            data.forms.set("perf_actv_inf", ["licuisse", "licitum [[esse|esse]]"]);
-            data.forms.set("futr_actv_inf", ["licitūrum [[esse|esse]]"]);
+            setVerbForm(data.forms, "pres_actv_inf", ["licēre"]);
+            setVerbForm(data.forms, "perf_actv_inf", ["licuisse", "licitum [[esse|esse]]"]);
+            setVerbForm(data.forms, "futr_actv_inf", ["licitūrum [[esse|esse]]"]);
 
-            data.forms.set("pres_actv_ptc", ["licēns"]);
-            data.forms.set("perf_actv_ptc", ["licitus"]);
-            data.forms.set("futr_actv_ptc", ["licitūrus"]);
+            setVerbForm(data.forms, "pres_actv_ptc", ["licēns"]);
+            setVerbForm(data.forms, "perf_actv_ptc", ["licitus"]);
+            setVerbForm(data.forms, "futr_actv_ptc", ["licitūrus"]);
         });
 
         this.irreg_conjugations.set("volo", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
@@ -2220,8 +2221,8 @@ export class LaVerb {
 
             const prefix = typeinfo.prefix;
 
-            typeinfo.subtypes.add("nopass");
-            typeinfo.subtypes.add("noimp");
+            addVerbType(typeinfo.subtypes, "nopass");
+            addVerbType(typeinfo.subtypes, "noimp");
             this.make_perf(data, [prefix + "volu"]);
             this.add_forms(data, "pres_actv_indc", prefix, "volō", "vīs", prefix ? "vult" : ["vult", "volt"], "volumus", prefix ? "vultis" : ["vultis", "voltis"], "volunt");
             this.volo_malo_nolo(data, prefix + "vol", prefix + "vel");
@@ -2230,8 +2231,8 @@ export class LaVerb {
         this.irreg_conjugations.set("malo", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
             data.categories.push("Latin irregular verbs");
 
-            typeinfo.subtypes.add("nopass");
-            typeinfo.subtypes.add("noimp");
+            addVerbType(typeinfo.subtypes, "nopass");
+            addVerbType(typeinfo.subtypes, "noimp");
             this.make_perf(data, ["mālu"]);
             this.add_forms(data, "pres_actv_indc", "", "mālō", "māvīs", "māvult", "mālumus", "māvultis", "mālunt");
             this.volo_malo_nolo(data, "māl", "māl");
@@ -2240,7 +2241,7 @@ export class LaVerb {
         this.irreg_conjugations.set("nolo", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
             data.categories.push("Latin irregular verbs");
 
-            typeinfo.subtypes.add("nopass");
+            addVerbType(typeinfo.subtypes, "nopass");
 
             this.make_perf(data, ["nōlu"]);
             this.add_forms(data, "pres_actv_indc", "", "nōlō", "nōn vīs", "nōn vult", "nōlumus", "nōn vultis", "nōlunt");
@@ -2255,7 +2256,7 @@ export class LaVerb {
             data.categories.push("Latin irregular verbs");
             data.categories.push("Latin suppletive verbs");
 
-            typeinfo.subtypes.add("nopass");
+            addVerbType(typeinfo.subtypes, "nopass");
 
             this.make_perf(data, ["potu"]);
 
@@ -2266,8 +2267,8 @@ export class LaVerb {
             this.add_forms(data, "pres_actv_subj", "poss", "im", "īs", "it", "īmus", "ītis", "int");
             this.add_forms(data, "impf_actv_subj", "poss", "em", "ēs", "et", "ēmus", "ētis", "ent");
 
-            data.forms.set("pres_actv_inf", ["posse"]);
-            data.forms.set("pres_actv_ptc", ["potēns"]);
+            setVerbForm(data.forms, "pres_actv_inf", ["posse"]);
+            setVerbForm(data.forms, "pres_actv_ptc", ["potēns"]);
         });
 
         this.irreg_conjugations.set("piget", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
@@ -2278,20 +2279,20 @@ export class LaVerb {
 
             const prefix = typeinfo.prefix;
 
-            data.forms.set("3s_pres_actv_indc", [prefix + "piget"]);
-            data.forms.set("3s_impf_actv_indc", [prefix + "pigēbat"]);
-            data.forms.set("3s_futr_actv_indc", [prefix + "pigēbit"]);
-            data.forms.set("3s_perf_actv_indc", [prefix + "piguit", prefix + "pigitum [[esse|est]]"]);
-            data.forms.set("3s_plup_actv_indc", [prefix + "piguerat", prefix + "pigitum [[esse|erat]]"]);
-            data.forms.set("3s_futp_actv_indc", [prefix + "piguerit", prefix + "pigitum [[esse|erit]]"]);
-            data.forms.set("3s_pres_actv_subj", [prefix + "pigeat"]);
-            data.forms.set("3s_impf_actv_subj", [prefix + "pigēret"]);
-            data.forms.set("3s_perf_actv_subj", [prefix + "piguerit", prefix + "pigitum [[esse|sit]]"]);
-            data.forms.set("3s_plup_actv_subj", [prefix + "piguisset", prefix + "pigitum [[esse|esset]]"]);
-            data.forms.set("pres_actv_inf", [prefix + "pigēre"]);
-            data.forms.set("perf_actv_inf", [prefix + "pigitum [[esse|esse]]"]);
-            data.forms.set("pres_actv_ptc", [prefix + "pigēns"]);
-            data.forms.set("perf_actv_ptc", [prefix + "pigitum"]);
+            setVerbForm(data.forms, "3s_pres_actv_indc", [prefix + "piget"]);
+            setVerbForm(data.forms, "3s_impf_actv_indc", [prefix + "pigēbat"]);
+            setVerbForm(data.forms, "3s_futr_actv_indc", [prefix + "pigēbit"]);
+            setVerbForm(data.forms, "3s_perf_actv_indc", [prefix + "piguit", prefix + "pigitum [[esse|est]]"]);
+            setVerbForm(data.forms, "3s_plup_actv_indc", [prefix + "piguerat", prefix + "pigitum [[esse|erat]]"]);
+            setVerbForm(data.forms, "3s_futp_actv_indc", [prefix + "piguerit", prefix + "pigitum [[esse|erit]]"]);
+            setVerbForm(data.forms, "3s_pres_actv_subj", [prefix + "pigeat"]);
+            setVerbForm(data.forms, "3s_impf_actv_subj", [prefix + "pigēret"]);
+            setVerbForm(data.forms, "3s_perf_actv_subj", [prefix + "piguerit", prefix + "pigitum [[esse|sit]]"]);
+            setVerbForm(data.forms, "3s_plup_actv_subj", [prefix + "piguisset", prefix + "pigitum [[esse|esset]]"]);
+            setVerbForm(data.forms, "pres_actv_inf", [prefix + "pigēre"]);
+            setVerbForm(data.forms, "perf_actv_inf", [prefix + "pigitum [[esse|esse]]"]);
+            setVerbForm(data.forms, "pres_actv_ptc", [prefix + "pigēns"]);
+            setVerbForm(data.forms, "perf_actv_ptc", [prefix + "pigitum"]);
 
             this.make_gerund(data, typeinfo, prefix + "pigend");
         });
@@ -2316,72 +2317,72 @@ export class LaVerb {
             const prefix_f = this.lengthen_prefix(this.ine(args.get("4")) || prefix);
             const prefix_s = this.lengthen_prefix(prefix);
 
-            typeinfo.subtypes.add("nopass");
-            typeinfo.subtypes.add("supfutractvonly");
+            addVerbType(typeinfo.subtypes, "nopass");
+            addVerbType(typeinfo.subtypes, "supfutractvonly");
 
             this.make_perf(data, [prefix_f + "fu"]);
             this.make_supine(data, typeinfo, [prefix_f + "fut"]);
 
-            data.forms.set("1s_pres_actv_indc", [prefix_s + "sum"]);
-            data.forms.set("2s_pres_actv_indc", [prefix_e + "es"]);
-            data.forms.set("3s_pres_actv_indc", [prefix_e + "est"]);
-            data.forms.set("1p_pres_actv_indc", [prefix_s + "sumus"]);
-            data.forms.set("2p_pres_actv_indc", [prefix_e + "estis"]);
-            data.forms.set("3p_pres_actv_indc", [prefix_s + "sunt"]);
+            setVerbForm(data.forms, "1s_pres_actv_indc", [prefix_s + "sum"]);
+            setVerbForm(data.forms, "2s_pres_actv_indc", [prefix_e + "es"]);
+            setVerbForm(data.forms, "3s_pres_actv_indc", [prefix_e + "est"]);
+            setVerbForm(data.forms, "1p_pres_actv_indc", [prefix_s + "sumus"]);
+            setVerbForm(data.forms, "2p_pres_actv_indc", [prefix_e + "estis"]);
+            setVerbForm(data.forms, "3p_pres_actv_indc", [prefix_s + "sunt"]);
 
-            data.forms.set("1s_impf_actv_indc", [prefix_e + "eram"]);
-            data.forms.set("2s_impf_actv_indc", [prefix_e + "erās"]);
-            data.forms.set("3s_impf_actv_indc", [prefix_e + "erat"]);
-            data.forms.set("1p_impf_actv_indc", [prefix_e + "erāmus"]);
-            data.forms.set("2p_impf_actv_indc", [prefix_e + "erātis"]);
-            data.forms.set("3p_impf_actv_indc", [prefix_e + "erant"]);
+            setVerbForm(data.forms, "1s_impf_actv_indc", [prefix_e + "eram"]);
+            setVerbForm(data.forms, "2s_impf_actv_indc", [prefix_e + "erās"]);
+            setVerbForm(data.forms, "3s_impf_actv_indc", [prefix_e + "erat"]);
+            setVerbForm(data.forms, "1p_impf_actv_indc", [prefix_e + "erāmus"]);
+            setVerbForm(data.forms, "2p_impf_actv_indc", [prefix_e + "erātis"]);
+            setVerbForm(data.forms, "3p_impf_actv_indc", [prefix_e + "erant"]);
 
-            data.forms.set("1s_futr_actv_indc", [prefix_e + "erō"]);
-            data.forms.set("2s_futr_actv_indc", [prefix_e + "eris", prefix_e + "ere"]);
-            data.forms.set("3s_futr_actv_indc", [prefix_e + "erit"]);
-            data.forms.set("1p_futr_actv_indc", [prefix_e + "erimus"]);
-            data.forms.set("2p_futr_actv_indc", [prefix_e + "eritis"]);
-            data.forms.set("3p_futr_actv_indc", [prefix_e + "erunt"]);
+            setVerbForm(data.forms, "1s_futr_actv_indc", [prefix_e + "erō"]);
+            setVerbForm(data.forms, "2s_futr_actv_indc", [prefix_e + "eris", prefix_e + "ere"]);
+            setVerbForm(data.forms, "3s_futr_actv_indc", [prefix_e + "erit"]);
+            setVerbForm(data.forms, "1p_futr_actv_indc", [prefix_e + "erimus"]);
+            setVerbForm(data.forms, "2p_futr_actv_indc", [prefix_e + "eritis"]);
+            setVerbForm(data.forms, "3p_futr_actv_indc", [prefix_e + "erunt"]);
 
-            data.forms.set("1s_pres_actv_subj", [prefix_s + "sim"]);
-            data.forms.set("2s_pres_actv_subj", [prefix_s + "sīs"]);
-            data.forms.set("3s_pres_actv_subj", [prefix_s + "sit"]);
-            data.forms.set("1p_pres_actv_subj", [prefix_s + "sīmus"]);
-            data.forms.set("2p_pres_actv_subj", [prefix_s + "sītis"]);
-            data.forms.set("3p_pres_actv_subj", [prefix_s + "sint"]);
+            setVerbForm(data.forms, "1s_pres_actv_subj", [prefix_s + "sim"]);
+            setVerbForm(data.forms, "2s_pres_actv_subj", [prefix_s + "sīs"]);
+            setVerbForm(data.forms, "3s_pres_actv_subj", [prefix_s + "sit"]);
+            setVerbForm(data.forms, "1p_pres_actv_subj", [prefix_s + "sīmus"]);
+            setVerbForm(data.forms, "2p_pres_actv_subj", [prefix_s + "sītis"]);
+            setVerbForm(data.forms, "3p_pres_actv_subj", [prefix_s + "sint"]);
 
-            data.forms.set("1s_impf_actv_subj", [prefix_e + "essem", prefix_f + "forem"]);
-            data.forms.set("2s_impf_actv_subj", [prefix_e + "essēs", prefix_f + "forēs"]);
-            data.forms.set("3s_impf_actv_subj", [prefix_e + "esset", prefix_f + "foret"]);
-            data.forms.set("1p_impf_actv_subj", [prefix_e + "essēmus", prefix_f + "forēmus"]);
-            data.forms.set("2p_impf_actv_subj", [prefix_e + "essētis", prefix_f + "forētis"]);
-            data.forms.set("3p_impf_actv_subj", [prefix_e + "essent", prefix_f + "forent"]);
+            setVerbForm(data.forms, "1s_impf_actv_subj", [prefix_e + "essem", prefix_f + "forem"]);
+            setVerbForm(data.forms, "2s_impf_actv_subj", [prefix_e + "essēs", prefix_f + "forēs"]);
+            setVerbForm(data.forms, "3s_impf_actv_subj", [prefix_e + "esset", prefix_f + "foret"]);
+            setVerbForm(data.forms, "1p_impf_actv_subj", [prefix_e + "essēmus", prefix_f + "forēmus"]);
+            setVerbForm(data.forms, "2p_impf_actv_subj", [prefix_e + "essētis", prefix_f + "forētis"]);
+            setVerbForm(data.forms, "3p_impf_actv_subj", [prefix_e + "essent", prefix_f + "forent"]);
 
-            data.forms.set("2s_pres_actv_impr", [prefix_e + "es"]);
-            data.forms.set("2p_pres_actv_impr", [prefix_e + "este"]);
+            setVerbForm(data.forms, "2s_pres_actv_impr", [prefix_e + "es"]);
+            setVerbForm(data.forms, "2p_pres_actv_impr", [prefix_e + "este"]);
 
-            data.forms.set("2s_futr_actv_impr", [prefix_e + "estō"]);
-            data.forms.set("3s_futr_actv_impr", [prefix_e + "estō"]);
-            data.forms.set("2p_futr_actv_impr", [prefix_e + "estōte"]);
-            data.forms.set("3p_futr_actv_impr", [prefix_s + "suntō"]);
+            setVerbForm(data.forms, "2s_futr_actv_impr", [prefix_e + "estō"]);
+            setVerbForm(data.forms, "3s_futr_actv_impr", [prefix_e + "estō"]);
+            setVerbForm(data.forms, "2p_futr_actv_impr", [prefix_e + "estōte"]);
+            setVerbForm(data.forms, "3p_futr_actv_impr", [prefix_s + "suntō"]);
 
-            data.forms.set("pres_actv_inf", [prefix_e + "esse"]);
+            setVerbForm(data.forms, "pres_actv_inf", [prefix_e + "esse"]);
 
-            data.forms.set("futr_actv_inf", [prefix_f + "futūrum [[esse|esse]]", prefix_f + "fore"]);
+            setVerbForm(data.forms, "futr_actv_inf", [prefix_f + "futūrum [[esse|esse]]", prefix_f + "fore"]);
 
             if (prefix == "ab") {
-                data.forms.set("pres_actv_ptc", ["absēns"]);
+                setVerbForm(data.forms, "pres_actv_ptc", ["absēns"]);
             } else if (prefix == "prae") {
-                data.forms.set("pres_actv_ptc", ["praesēns"]);
+                setVerbForm(data.forms, "pres_actv_ptc", ["praesēns"]);
             }
 
-            data.forms.set("ger_gen", []);
-            data.forms.set("ger_dat", []);
-            data.forms.set("ger_acc", []);
-            data.forms.set("ger_abl", []);
+            setVerbForm(data.forms, "ger_gen", []);
+            setVerbForm(data.forms, "ger_dat", []);
+            setVerbForm(data.forms, "ger_acc", []);
+            setVerbForm(data.forms, "ger_abl", []);
 
-            data.forms.set("sup_acc", []);
-            data.forms.set("sup_abl", []);
+            setVerbForm(data.forms, "sup_acc", []);
+            setVerbForm(data.forms, "sup_abl", []);
         });
     }
 
@@ -2402,8 +2403,8 @@ export class LaVerb {
         this.add_forms(data, "pres_actv_subj", subj_stem, "im", "īs", "it", "īmus", "ītis", "int");
         this.add_forms(data, "impf_actv_subj", subj_stem + "l", "em", "ēs", "et", "ēmus", "ētis", "ent");
 
-        data.forms.set("pres_actv_inf", [subj_stem + "le"]);
-        data.forms.set("pres_actv_ptc", [indc_stem + "ēns"]);
+        setVerbForm(data.forms, "pres_actv_inf", [subj_stem + "le"]);
+        setVerbForm(data.forms, "pres_actv_ptc", [indc_stem + "ēns"]);
 
     }
 
@@ -2411,26 +2412,26 @@ export class LaVerb {
         data.categories.push("Latin second conjugation verbs");
         data.categories.push("Latin impersonal verbs");
 
-        typeinfo.subtypes.add("nopass");
+        addVerbType(typeinfo.subtypes, "nopass");
 
         const prefix = typeinfo.prefix;
         stem = prefix + stem;
 
-        data.forms.set("3s_pres_actv_indc", [stem + "et"]);
-        data.forms.set("3s_impf_actv_indc", [stem + "ēbat"]);
-        data.forms.set("3s_futr_actv_indc", [stem + "ēbit"]);
-        data.forms.set("3s_perf_actv_indc", [stem + "uit", stem + "itum [[esse|est]]"]);
-        data.forms.set("3s_plup_actv_indc", [stem + "uerat", stem + "itum [[esse|erat]]"]);
-        data.forms.set("3s_futp_actv_indc", [stem + "uerit", stem + "itum [[esse|erit]]"]);
-        data.forms.set("3s_pres_actv_subj", [stem + "eat"]);
-        data.forms.set("3s_impf_actv_subj", [stem + "ēret"]);
-        data.forms.set("3s_perf_actv_subj", [stem + "uerit", stem + "itum [[esse|sit]]"]);
-        data.forms.set("3s_plup_actv_subj", [stem + "uisset", stem + "itum [[esse|esset]]"]);
-        data.forms.set("3p_plup_actv_subj", [stem + "uissent"]);
-        data.forms.set("pres_actv_inf", [stem + "ēre"]);
-        data.forms.set("perf_actv_inf", [stem + "uisse", stem + "itum [[esse|esse]]"]);
-        data.forms.set("pres_actv_ptc", [stem + "ēns"]);
-        data.forms.set("perf_actv_ptc", [stem + "itum"]);
+        setVerbForm(data.forms, "3s_pres_actv_indc", [stem + "et"]);
+        setVerbForm(data.forms, "3s_impf_actv_indc", [stem + "ēbat"]);
+        setVerbForm(data.forms, "3s_futr_actv_indc", [stem + "ēbit"]);
+        setVerbForm(data.forms, "3s_perf_actv_indc", [stem + "uit", stem + "itum [[esse|est]]"]);
+        setVerbForm(data.forms, "3s_plup_actv_indc", [stem + "uerat", stem + "itum [[esse|erat]]"]);
+        setVerbForm(data.forms, "3s_futp_actv_indc", [stem + "uerit", stem + "itum [[esse|erit]]"]);
+        setVerbForm(data.forms, "3s_pres_actv_subj", [stem + "eat"]);
+        setVerbForm(data.forms, "3s_impf_actv_subj", [stem + "ēret"]);
+        setVerbForm(data.forms, "3s_perf_actv_subj", [stem + "uerit", stem + "itum [[esse|sit]]"]);
+        setVerbForm(data.forms, "3s_plup_actv_subj", [stem + "uisset", stem + "itum [[esse|esset]]"]);
+        setVerbForm(data.forms, "3p_plup_actv_subj", [stem + "uissent"]);
+        setVerbForm(data.forms, "pres_actv_inf", [stem + "ēre"]);
+        setVerbForm(data.forms, "perf_actv_inf", [stem + "uisse", stem + "itum [[esse|esse]]"]);
+        setVerbForm(data.forms, "pres_actv_ptc", [stem + "ēns"]);
+        setVerbForm(data.forms, "perf_actv_ptc", [stem + "itum"]);
     }
 
     private fio(data: ConjugationData, prefix: string, voice: string) {

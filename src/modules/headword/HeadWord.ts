@@ -51,14 +51,14 @@ export interface AdjectivalHead extends BaseHead {
     adverbs: string[];
 }
 
-export enum VerbType {
+export enum VerbalType {
     Verb = "verbs",
     Suffix = "suffixes",
 }
 
 export interface VerbalHead extends BaseHead {
     headType: "verbal";
-    partOfSpeech: VerbType;
+    partOfSpeech: VerbalType;
     data: Conjugation;
     infinitives: string[];
 }

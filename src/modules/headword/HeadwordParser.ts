@@ -13,8 +13,10 @@
  */
 import { parse_template, read_list } from "../common";
 import { LaVerb } from "../conjugation/LaVerb";
+import { getVerbForm } from "../conjugation/VerbForm";
 import { LaNominal } from "../declination/LaNominal";
-import { AdjectivalType, AdverbType, Headword, NominalType, VerbType } from "./HeadWord";
+import { getNominalForm } from "../declination/NominalForm";
+import { AdjectivalType, AdverbType, Headword, NominalType, VerbalType } from "./HeadWord";
 
 export type Args = Map<string, string>;
 
@@ -37,8 +39,8 @@ export class HeadwordParser {
         ["la-part",         args => this.parseAdjectivalHead(args, AdjectivalType.Participle)],
 
         // these are parsed by la-verb
-        ["la-verb",         args => this.parseVerbalHead(args, VerbType.Verb)],
-        ["la-suffix-verb",  args => this.parseVerbalHead(args, VerbType.Suffix)],
+        ["la-verb",         args => this.parseVerbalHead(args, VerbalType.Verb)],
+        ["la-suffix-verb",  args => this.parseVerbalHead(args, VerbalType.Suffix)],
 
         // these are all custom
         ["la-gerund",       (args, lemma) => this.parseGerund(args)],
@@ -117,7 +119,7 @@ export class HeadwordParser {
         let lemmata = decl.overriding_lemma;
         const lemmaNum = (decl.num == "pl" ? "pl" : "sg");
         if (lemmata.length == 0) {
-            lemmata = decl.forms.get(`linked_nom_${lemmaNum}`) || [];
+            lemmata = getNominalForm(decl.forms, `linked_nom_${lemmaNum}`) || [];
         }
 
         let genders = decl.overriding_genders || [];
@@ -147,7 +149,7 @@ export class HeadwordParser {
         let lemmata = decl.overriding_lemma;
         const lemmaNum = (decl.num == "pl" ? "pl" : "sg");
         if (lemmata.length == 0) {
-            lemmata = decl.forms.get(`linked_nom_${lemmaNum}_m`) || [];
+            lemmata = getNominalForm(decl.forms, `linked_nom_${lemmaNum}_m`) || [];
         }
 
         return {
@@ -163,7 +165,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseVerbalHead(args: Args, pos: VerbType): Headword {
+    private parseVerbalHead(args: Args, pos: VerbalType): Headword {
         const conj = this.conj.make_data(args);
 
         let lemma_forms = conj.data.overriding_lemma;
@@ -171,7 +173,7 @@ export class HeadwordParser {
             lemma_forms = this.conj.get_lemma_forms(conj.data, true);
         }
 
-        const infinitives = conj.data.forms.get("pres_actv_inf") || [];
+        const infinitives = getVerbForm(conj.data.forms, "pres_actv_inf") || [];
 
         return {
             templateType: "headword",
