@@ -129,7 +129,7 @@ export class LaVerb {
         "highlydef",
     ]);
 
-    private potential_lemma_slots = [
+    private static potential_lemma_slots = [
         "1s_pres_actv_indc", // regular
         "3s_pres_actv_indc", // impersonal
         "1s_perf_actv_indc", // coepī
@@ -265,12 +265,12 @@ export class LaVerb {
         };
     }
 
-    public get_valid_forms(raw_forms: string[] | undefined): string[] {
+    public static get_valid_forms(raw_forms: string[] | undefined): string[] {
         const valid_forms: string[] = [];
 
         if (raw_forms) {
             for (const subform of raw_forms) {
-                if (!this.form_is_empty([subform])) {
+                if (!LaVerb.form_is_empty([subform])) {
                     valid_forms.push(subform);
                 }
             }
@@ -279,10 +279,10 @@ export class LaVerb {
         return valid_forms;
     }
 
-    public get_lemma_forms(data: ConjugationData, do_linked: boolean): string[] {
+    public static get_lemma_forms(data: ConjugationData, do_linked: boolean): string[] {
         const linked_prefix = (do_linked ? "linked_" : "");
-        for (const slot of this.potential_lemma_slots) {
-            const lemma_forms = this.get_valid_forms(getVerbForm(data.forms, linked_prefix + slot));
+        for (const slot of LaVerb.potential_lemma_slots) {
+            const lemma_forms = LaVerb.get_valid_forms(getVerbForm(data.forms, linked_prefix + slot));
             if (lemma_forms.length > 0) {
                 return lemma_forms;
             }
@@ -482,7 +482,7 @@ export class LaVerb {
                 }
                 if (stage == 3) {
                     if (include_linked) {
-                        max_slotnum = this.potential_lemma_slots.length;
+                        max_slotnum = LaVerb.potential_lemma_slots.length;
                     } else {
                         stage++;
                     }
@@ -496,7 +496,7 @@ export class LaVerb {
             } else if (stage == 2) {
                 entries.push(this.generic_slots[slotnum]);
             } else {
-                entries.push("linked_" + this.potential_lemma_slots[slotnum]);
+                entries.push("linked_" + LaVerb.potential_lemma_slots[slotnum]);
             }
             slotnum++;
         }
@@ -1367,10 +1367,10 @@ export class LaVerb {
         }
 
         const perf_pasv_ptc = getVerbForm(data.forms, "perf_pasv_ptc");
-        if (perf_pasv_ptc && !this.form_is_empty(perf_pasv_ptc)) {
+        if (perf_pasv_ptc && !LaVerb.form_is_empty(perf_pasv_ptc)) {
             if (hasVerbType(typeinfo.subtypes, "passimpers")) {
                 for (const ppp of perf_pasv_ptc) {
-                    if (!this.form_is_empty([ppp])) {
+                    if (!LaVerb.form_is_empty([ppp])) {
                         this.add_form(data, "3s_perf_pasv_indc", ppp, " [[esse|est]]");
                         this.add_form(data, "3s_futp_pasv_indc", ppp, " [[esse|erit]]");
                         this.add_form(data, "3s_plup_pasv_indc", ppp, " [[esse|erat]]");
@@ -1380,7 +1380,7 @@ export class LaVerb {
                 }
             } else if (hasVerbType(typeinfo.subtypes, "pass3only")) {
                 for (const ppp of perf_pasv_ptc) {
-                    if (!this.form_is_empty([ppp])) {
+                    if (!LaVerb.form_is_empty([ppp])) {
                         let ppp_s = "";
                         let ppp_p = "";
                         if (hasVerbType(typeinfo.subtypes, "mp")) {
@@ -1647,7 +1647,7 @@ export class LaVerb {
         }
     }
 
-    private form_is_empty(forms: string[] | undefined): boolean {
+    private static form_is_empty(forms: string[] | undefined): boolean {
         if (!forms) {
             return true;
         }
@@ -1760,10 +1760,10 @@ export class LaVerb {
                 }
 
                 const forms = getVerbForm(data.forms, slot) || [];
-                if (!this.form_is_empty(forms)) {
+                if (!LaVerb.form_is_empty(forms)) {
                     const affixed_forms = [];
                     for (const form of forms) {
-                        if (this.form_is_empty([form])) {
+                        if (LaVerb.form_is_empty([form])) {
                             affixed_forms.push(form);
                         } else {
                             affixed_forms.push(prefix_no_links + form + suffix_no_links);
@@ -1776,7 +1776,7 @@ export class LaVerb {
     }
 
     private set_linked_forms(data: ConjugationData, typeinfo: ConjugationInfo) {
-        for (const slot of this.potential_lemma_slots) {
+        for (const slot of LaVerb.potential_lemma_slots) {
             const linked_forms: string[] = [];
             const forms = getVerbForm(data.forms, slot);
             if (forms) {

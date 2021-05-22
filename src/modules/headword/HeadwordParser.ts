@@ -170,7 +170,7 @@ export class HeadwordParser {
 
         let lemma_forms = conj.data.overriding_lemma;
         if (lemma_forms.length == 0) {
-            lemma_forms = this.conj.get_lemma_forms(conj.data, true);
+            lemma_forms = LaVerb.get_lemma_forms(conj.data, true);
         }
 
         const infinitives = getVerbForm(conj.data.forms, "pres_actv_inf") || [];
