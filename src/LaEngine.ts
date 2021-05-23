@@ -22,6 +22,15 @@ export class LaEngine {
         return this.nominal.do_generate_noun_forms(args);
     }
 
+    public decline_gerund(template: string): NounData {
+        const args = parse_template(template);
+        const gerund = args.get("1");
+
+        const gerundTemplate = `{{la-ndecl|${gerund}<2.sg>|nom_sg=-|voc_sg=-}}`;
+        const gerundArgs = parse_template(gerundTemplate);
+        return this.nominal.do_generate_noun_forms(gerundArgs, "gerunds");
+    }
+
     public decline_adjective(template: string): AdjectiveData {
         const args = parse_template(template);
         return this.nominal.do_generate_adj_forms(args);
@@ -52,7 +61,7 @@ export class LaEngine {
             case "la-adecl":
                 return this.nominal.do_generate_adj_forms(args);
             case "la-decl-gerund":
-                return this.decline_noun(`{{la-ndecl|${args.get("1")}<2.sg>|nom_sg=-|voc_sg=-}}`);
+                return this.decline_gerund(template);
             case "la-decl-ppron":
                 throw Error("la-decl-ppron not implemented");
             default:

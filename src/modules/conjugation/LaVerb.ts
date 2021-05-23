@@ -15,6 +15,7 @@
  *
  */
 import { ArgMap, extract_base, FormMap, read_list, remove_links, strip_macrons } from "../common";
+import { VerbAffix } from "./VerbAffix";
 import { getVerbForm, setVerbForm, VerbForm } from "./VerbForm";
 import { addVerbType, hasVerbType, VerbType } from "./VerbType";
 
@@ -65,7 +66,7 @@ export interface ConjugationInfo {
 
 export interface ConjugationData {
     forms: FormMap<VerbForm>;
-    presuf: ArgMap;
+    presuf: Map<VerbAffix, string>;
     categories: string[];
     footnotes: FormMap<string>;
     overriding_lemma: string[];
@@ -229,25 +230,25 @@ export class LaVerb {
             }
         };
 
-        data.presuf.set("prefix", normalize_prefix(args.get("prefix")));
-        data.presuf.set("passive_prefix", normalize_prefix(args.get("passive_prefix")) || data.presuf.get("prefix") || "");
-        data.presuf.set("plural_prefix", normalize_prefix(args.get("plural_prefix")) || data.presuf.get("prefix") || "");
+        data.presuf.set(VerbAffix.Prefix, normalize_prefix(args.get("prefix")));
+        data.presuf.set(VerbAffix.PassivePrefix, normalize_prefix(args.get("passive_prefix")) || data.presuf.get(VerbAffix.Prefix) || "");
+        data.presuf.set(VerbAffix.PluralPrefix, normalize_prefix(args.get("plural_prefix")) || data.presuf.get(VerbAffix.Prefix) || "");
 
-        data.presuf.set("plural_passive_prefix", normalize_prefix(args.get("plural_passive_prefix")) || normalize_prefix(args.get("passive_prefix")) || data.presuf.get("plural_prefix") || "");
-        data.presuf.set("gen_prefix", normalize_prefix(args.get("gen_prefix")));
-        data.presuf.set("dat_prefix", normalize_prefix(args.get("dat_prefix")));
-        data.presuf.set("acc_prefix", normalize_prefix(args.get("acc_prefix")));
-        data.presuf.set("abl_prefix", normalize_prefix(args.get("abl_prefix")));
+        data.presuf.set(VerbAffix.PluralPassivePrefix, normalize_prefix(args.get("plural_passive_prefix")) || normalize_prefix(args.get("passive_prefix")) || data.presuf.get(VerbAffix.PluralPrefix) || "");
+        data.presuf.set(VerbAffix.GenitivePrefix, normalize_prefix(args.get("gen_prefix")));
+        data.presuf.set(VerbAffix.DativePrefix, normalize_prefix(args.get("dat_prefix")));
+        data.presuf.set(VerbAffix.AccusativePrefix, normalize_prefix(args.get("acc_prefix")));
+        data.presuf.set(VerbAffix.AblativePrefix, normalize_prefix(args.get("abl_prefix")));
 
-        data.presuf.set("suffix", normalize_suffix(args.get("suffix")));
-        data.presuf.set("passive_suffix", normalize_suffix(args.get("passive_suffix")) || data.presuf.get("suffix") || "");
-        data.presuf.set("plural_suffix", normalize_suffix(args.get("plural_suffix")) || data.presuf.get("suffix") || "");
-        data.presuf.set("plural_passive_suffix", normalize_suffix(args.get("plural_passive_suffix")) || normalize_suffix(args.get("passive_suffix")) || data.presuf.get("plural_suffix") || "");
+        data.presuf.set(VerbAffix.Suffix, normalize_suffix(args.get("suffix")));
+        data.presuf.set(VerbAffix.PassiveSuffix, normalize_suffix(args.get("passive_suffix")) || data.presuf.get(VerbAffix.Suffix) || "");
+        data.presuf.set(VerbAffix.PluralSuffix, normalize_suffix(args.get("plural_suffix")) || data.presuf.get(VerbAffix.Suffix) || "");
+        data.presuf.set(VerbAffix.PluralPassiveSuffix, normalize_suffix(args.get("plural_passive_suffix")) || normalize_suffix(args.get("passive_suffix")) || data.presuf.get(VerbAffix.PluralSuffix) || "");
 
-        data.presuf.set("gen_suffix", normalize_suffix(args.get("gen_suffix")));
-        data.presuf.set("dat_suffix", normalize_suffix(args.get("dat_suffix")));
-        data.presuf.set("acc_suffix", normalize_suffix(args.get("acc_suffix")));
-        data.presuf.set("abl_suffix", normalize_suffix(args.get("abl_suffix")));
+        data.presuf.set(VerbAffix.GenitiveSuffix, normalize_suffix(args.get("gen_suffix")));
+        data.presuf.set(VerbAffix.DativeSuffix, normalize_suffix(args.get("dat_suffix")));
+        data.presuf.set(VerbAffix.AccusativeSuffive, normalize_suffix(args.get("acc_suffix")));
+        data.presuf.set(VerbAffix.AblativeSuffix, normalize_suffix(args.get("abl_suffix")));
 
         conj(args, data, typeinfo);
 
@@ -1299,10 +1300,10 @@ export class LaVerb {
                         this.add_form(data, "futr_pasv_ptc", "", und_base + ending);
                     }
                 }
-            } else if (data.presuf.get(cas + "_prefix") || data.presuf.get(cas + "_suffix") && !no_gerund) {
-                this.add_form(data, "ger_" + cas, "", (data.presuf.get(cas + "_prefix") || "") + base + ending + (data.presuf.get(cas + "_suffix") || ""));
+            } else if (data.presuf.get(cas + "_prefix" as VerbAffix) || data.presuf.get(cas + "_suffix" as VerbAffix) && !no_gerund) {
+                this.add_form(data, "ger_" + cas, "", (data.presuf.get(cas + "_prefix" as VerbAffix) || "") + base + ending + (data.presuf.get(cas + "_suffix" as VerbAffix) || ""));
                 if (und_base) {
-                    this.add_form(data, "ger_" + cas, "", (data.presuf.get(cas + "_prefix") || "") + und_base + ending + (data.presuf.get(cas + "_suffix") || ""));
+                    this.add_form(data, "ger_" + cas, "", (data.presuf.get(cas + "_prefix" as VerbAffix) || "") + und_base + ending + (data.presuf.get(cas + "_suffix" as VerbAffix) || ""));
                 }
             }
         }
@@ -1315,7 +1316,7 @@ export class LaVerb {
 
         if (!no_gerund) {
             for (const [cas, ending] of endingMap) {
-                this.add_form(data, "ger_" + cas, "", (data.presuf.get("prefix") || "") + base + ending + (data.presuf.get("suffix") || ""));
+                this.add_form(data, "ger_" + cas, "", (data.presuf.get("prefix" as VerbAffix) || "") + base + ending + (data.presuf.get("suffix" as VerbAffix) || ""));
             }
         }
     }
@@ -1677,8 +1678,8 @@ export class LaVerb {
             ["plup_pasv_subj", "imperfect active subjunctive"],
         ]);
 
-        const passivePrefix = data.presuf.get("passive_prefix");
-        const passiveSuffix = data.presuf.get("passive_suffix");
+        const passivePrefix = data.presuf.get(VerbAffix.PassivePrefix);
+        const passiveSuffix = data.presuf.get(VerbAffix.PassiveSuffix);
 
         let prefix_joiner = "";
         let suffix_joiner = "";
@@ -1709,23 +1710,23 @@ export class LaVerb {
     }
 
     private add_prefix_suffix(data: ConjugationData) {
-        if (!data.presuf.get("prefix") && !data.presuf.get("suffix")) {
+        if (!data.presuf.get(VerbAffix.Prefix) && !data.presuf.get(VerbAffix.Suffix)) {
             return;
         }
 
-        const active_prefix = data.presuf.get("prefix") || "";
-        const passive_prefix = data.presuf.get("passive_prefix") || "";
-        const plural_prefix = data.presuf.get("plural_prefix") || "";
-        const plural_passive_prefix = data.presuf.get("plural_passive_prefix") || "";
+        const active_prefix = data.presuf.get(VerbAffix.Prefix) || "";
+        const passive_prefix = data.presuf.get(VerbAffix.PassivePrefix) || "";
+        const plural_prefix = data.presuf.get(VerbAffix.PluralPrefix) || "";
+        const plural_passive_prefix = data.presuf.get(VerbAffix.PluralPassivePrefix) || "";
         const active_prefix_no_links = remove_links(active_prefix);
         const passive_prefix_no_links = remove_links(passive_prefix);
         const plural_prefix_no_links = remove_links(plural_prefix);
         const plural_passive_prefix_no_links = remove_links(plural_passive_prefix);
 
-        const active_suffix = data.presuf.get("suffix") || "";
-        const passive_suffix = data.presuf.get("passive_suffix") || "";
-        const plural_suffix = data.presuf.get("plural_suffix") || "";
-        const plural_passive_suffix = data.presuf.get("plural_passive_suffix") || "";
+        const active_suffix = data.presuf.get(VerbAffix.Suffix) || "";
+        const passive_suffix = data.presuf.get(VerbAffix.PassiveSuffix) || "";
+        const plural_suffix = data.presuf.get(VerbAffix.PluralSuffix) || "";
+        const plural_passive_suffix = data.presuf.get(VerbAffix.PluralPassiveSuffix) || "";
         const active_suffix_no_links = remove_links(active_suffix);
         const passive_suffix_no_links = remove_links(passive_suffix);
         const plural_suffix_no_links = remove_links(plural_suffix);

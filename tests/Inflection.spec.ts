@@ -7,6 +7,7 @@ import { LaEngine } from "../src/LaEngine";
 import { Conjugation, ConjugationData, ConjugationInfo } from "../src/modules/conjugation/LaVerb";
 import { remove_html, remove_links } from "../src/modules/common";
 import { AdjectiveData, DeclensionData, DeclProp, NounData } from "../src/modules/declination/LaNominal";
+import { VerbAffix } from "../src/modules/conjugation/VerbAffix";
 
 interface TestVector {
     lemma: string;
@@ -51,6 +52,9 @@ describe("engine", () => {
     it("should decline gerunds as ndecl", () => {
         const data = engine.parse_template("{{la-decl-gerund|amandum}}", "amandum");
         expect(data.templateType).to.equal("declension");
+        if (data.templateType == "declension") {
+            expect(data.pos).to.equal("gerunds");
+        }
     });
 });
 
@@ -103,28 +107,9 @@ function compareVerbData(luaData: any, jsData: ConjugationData) {
     expect(luaCategories).to.eql(jsData.categories);
 
     // compare presuf
-    const preSuf = [
-        "prefix",
-        "passive_prefix",
-        "plural_prefix",
-        "plural_passive_prefix",
-        "gen_prefix",
-        "dat_prefix",
-        "acc_prefix",
-        "abl_prefix",
-        "suffix",
-        "passive_suffix",
-        "plural_suffix",
-        "plural_passive_suffix",
-        "gen_suffix",
-        "dat_suffix",
-        "acc_suffix",
-        "abl_suffix",
-    ];
-
-    for (const key of preSuf) {
+    for (const key of Object.keys(VerbAffix)) {
         const luaVal = luaData[key] || "";
-        const jsVal = jsData.presuf.get(key) || "";
+        const jsVal = jsData.presuf.get(key as VerbAffix) || "";
         expect(luaVal).to.equal(jsVal);
     }
 
