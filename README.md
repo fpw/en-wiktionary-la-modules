@@ -9,7 +9,7 @@ implemented and unit-tested against all original outputs from the original Lua m
 
 The code uses Lua naming conventions and idioms because it's basically a conversion.
 It should be kept compatible with the original code as much as possible so that later
-changes to the Wiktionary modules can easily ported.
+changes to the Wiktionary modules can easily be ported.
 
 For this reason and due to the CC license, it's suggested to create wrapper modules around
 this code with proper idioms and safer types.

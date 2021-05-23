@@ -20,6 +20,8 @@ interface InflectionData {
 }
 
 describe("engine", () => {
+    const engine = new LaEngine();
+
     it("should match all test data", function() {
         this.timeout(0);
 
@@ -36,7 +38,7 @@ describe("engine", () => {
         });
 
         reader.on("line", line => {
-            checkEntry(JSON.parse(line) as TestVector);
+            checkEntry(engine, JSON.parse(line) as TestVector);
         });
 
         return new Promise<void>(accept => {
@@ -45,23 +47,25 @@ describe("engine", () => {
             });
         });
     });
+
+    it("should decline gerunds as ndecl", () => {
+        const data = engine.parse_template("{{la-decl-gerund|amandum}}", "amandum");
+        expect(data.templateType).to.equal("declension");
+    });
 });
 
-const engine = new LaEngine();
-
-function checkEntry(entry: TestVector): void {
+function checkEntry(engine: LaEngine, entry: TestVector): void {
     for (const inf of entry.inflections) {
-        processTemplate(inf, entry.lemma);
+        processTemplate(engine, inf, entry.lemma);
     }
 
     for (const head of entry.heads) {
-        processTemplate(head, entry.lemma);
+        processTemplate(engine, head, entry.lemma);
     }
 }
 
-function processTemplate(inf: InflectionData, lemma: string) {
+function processTemplate(engine: LaEngine, inf: InflectionData, lemma: string) {
     const data = engine.parse_template(inf.input, lemma);
-    should().exist(data);
 
     switch (data.templateType) {
         case "conjugation":

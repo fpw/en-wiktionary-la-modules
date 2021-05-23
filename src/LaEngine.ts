@@ -45,10 +45,18 @@ export class LaEngine {
         const templateName = args.get("0") || "";
 
         switch (templateName) {
-            case "la-conj":     return this.conj.make_data(args);
-            case "la-ndecl":    return this.nominal.do_generate_noun_forms(args);
-            case "la-adecl":    return this.nominal.do_generate_adj_forms(args);
-            default:            throw Error(`Unknown template ${templateName}`);
+            case "la-conj":
+                return this.conj.make_data(args);
+            case "la-ndecl":
+                return this.nominal.do_generate_noun_forms(args);
+            case "la-adecl":
+                return this.nominal.do_generate_adj_forms(args);
+            case "la-decl-gerund":
+                return this.decline_noun(`{{la-ndecl|${args.get("1")}<2.sg>|nom_sg=-|voc_sg=-}}`);
+            case "la-decl-ppron":
+                throw Error("la-decl-ppron not implemented");
+            default:
+                throw Error(`Unknown template ${templateName}`);
         }
     }
 }
