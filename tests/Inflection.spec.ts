@@ -8,6 +8,7 @@ import { Conjugation, ConjugationData, ConjugationInfo } from "../src/modules/co
 import { remove_html, remove_links } from "../src/modules/common";
 import { AdjectiveData, DeclensionData, DeclProp, NounData } from "../src/modules/declination/LaNominal";
 import { VerbAffix } from "../src/modules/conjugation/VerbAffix";
+import { VerbForm } from "../src/modules/conjugation/VerbForm";
 
 interface TestVector {
     lemma: string;
@@ -26,8 +27,8 @@ describe("engine", () => {
     it("should match all test data", function() {
         this.timeout(0);
 
-            // get from https://folko.solhost.org/wiktionary/la-test-vectors.gz
-            const file = "./tests/data/la-test-vectors.gz";
+        // get from https://folko.solhost.org/wiktionary/la-test-vectors.gz
+        const file = "./tests/data/la-test-vectors.gz";
 
         if (!existsSync(file)) {
             return;
@@ -54,6 +55,15 @@ describe("engine", () => {
         expect(data.templateType).to.equal("declension");
         if (data.templateType == "declension") {
             expect(data.pos).to.equal("gerunds");
+        }
+    });
+
+    it("should conjugate revertī correctly", () => {
+        const data = engine.parse_template("{{la-conj|3.semi-depon|revertor|revers}}", "reverti");
+        expect(data.templateType).to.equal("conjugation");
+        if (data.templateType == "conjugation") {
+            expect(data.data.forms.get(VerbForm.pres_actv_indc_2s)).to.contain("reverteris");
+            expect(data.data.forms.get(VerbForm.perf_actv_indc_2s)).to.contain("revertistī");
         }
     });
 });

@@ -745,6 +745,13 @@ export class LaVerb {
                 args.set("3", supine_stem);
             }
             args.delete("4");
+
+            if (hasVerbType(subtypes, "depon") && hasVerbType(subtypes, "semidepon")) {
+                // added by @fpw: Support for revertor which is a reverse semi-depon
+                perf_stem = base;
+                args.set("3", perf_stem);
+                subtypes.delete(VerbType.Deponent);
+            }
         }
 
         for (const subtype of subtypes) {
@@ -799,8 +806,8 @@ export class LaVerb {
 
         if (hasVerbType(typeinfo.subtypes, "depon") || hasVerbType(typeinfo.subtypes, "semidepon")) {
             pres_stem = this.ine(args.get("1"));
-            perf_stem = "";
             supine_stem = this.ine(args.get("2"));
+            perf_stem = this.ine(args.get("3")); // added by @fpw for reverti
         } else {
             pres_stem = this.ine(args.get("1"));
             perf_stem = this.ine(args.get("2"));
@@ -859,7 +866,7 @@ export class LaVerb {
         this.add_form(data, "2p_" + keytype, stem, suf2p);
     }
 
-    private add_form(data: ConjugationData, key: string, stem: string, suf: any, pos = 0) {
+    private add_form(data: ConjugationData, key: string, stem: string, suf: string | string[], pos = 0) {
         if (suf === undefined || (!stem && !suf)) {
             return;
         }
@@ -1494,16 +1501,27 @@ export class LaVerb {
         } else if (hasVerbType(typeinfo.subtypes, "semidepon")) {
             this.insert_if_not(data.categories, "Latin semi-deponent verbs");
 
-            for (const key of data.forms.keys()) {
-                if (key.match(/perf_actv/) || key.match(/plup_actv/) || key.match(/futp_actv/) || key.match(/pres_pasv/) || key.match(/impf_pasv/) || key.match(/futr_pasv/)) {
-                    setVerbForm(data.forms, key, []);
+            if (typeinfo.perf_stem.length != 0) { // added by @fpw for reverti
+                for (const [key, form] of data.forms) {
+                    if (key.match(/pres_pasv/) || key.match(/impf_pasv/) || key.match(/futr_pasv/) && key != "futr_pasv_ptc" && key != "futr_pasv_inf" && key != "pres_pasv_ptc") {
+                        setVerbForm(data.forms, key.replace(/pasv/, "actv"), form);
+                        setVerbForm(data.forms, key, []);
+                    } else if (key.match(/sup_/)) {
+                        setVerbForm(data.forms, key, []);
+                    }
                 }
-            }
+            } else {
+                for (const key of data.forms.keys()) {
+                    if (key.match(/perf_actv/) || key.match(/plup_actv/) || key.match(/futp_actv/) || key.match(/pres_pasv/) || key.match(/impf_pasv/) || key.match(/futr_pasv/)) {
+                        setVerbForm(data.forms, key, []);
+                    }
+                }
 
-            for (const [key, form] of data.forms) {
-                if (key.match(/perf_pasv/) || key.match(/plup_pasv/) || key.match(/futp_pasv/)) {
-                    setVerbForm(data.forms, key.replace(/pasv/, "actv"), form);
-                    setVerbForm(data.forms, key, []);
+                for (const [key, form] of data.forms) {
+                    if (key.match(/perf_pasv/) || key.match(/plup_pasv/) || key.match(/futp_pasv/)) {
+                        setVerbForm(data.forms, key.replace(/pasv/, "actv"), form);
+                        setVerbForm(data.forms, key, []);
+                    }
                 }
             }
         } else if (hasVerbType(typeinfo.subtypes, "depon")) {
@@ -1635,7 +1653,10 @@ export class LaVerb {
         if (this.options.suppressPassiveRe) {
             for (const slot of this.iter_slots(true, true)) {
                 if (slot.match(/^2s_/) && slot.match(/pasv/)) {
-                    const forms = getVerbForm(data.forms, slot) || [];
+                    const forms = getVerbForm(data.forms, slot);
+                    if (!forms) {
+                        continue;
+                    }
                     const newForms: string[] = [];
                     for (const form of forms) {
                         if (!form.match(/re$/) || forms.length == 1) {
