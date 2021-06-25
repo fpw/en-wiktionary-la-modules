@@ -15,6 +15,7 @@ export interface BaseHead {
 
 export interface FormHead extends BaseHead {
     headType: "form";
+    partOfSpeech: string; // as below
 }
 
 export enum NominalType {

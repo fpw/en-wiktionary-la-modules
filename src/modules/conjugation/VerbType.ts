@@ -14,7 +14,7 @@ export enum VerbType {
     NoPerfect = "noperf",
     NoPassivePerfect = "nopasvperf",
     NoSupine = "nosup",
-    supfutractvonly = "supfutractvonly",
+    SupineFutrActvOnly = "supfutractvonly",
     NoImperfect = "noimp",
     NoFuture = "nofut",
     PoeticInfinitive = "p3inf",

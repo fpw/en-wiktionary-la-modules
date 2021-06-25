@@ -8,6 +8,8 @@ export * from "./modules/conjugation/VerbAffix";
 export * from "./modules/declination/LaNominal";
 export * from "./modules/declination/NominalForm";
 
+export * from "./modules/declination/LaPersonalPronoun";
+
 export * from "./modules/headword/HeadWord";
 export * from "./modules/headword/HeadwordParser";
 

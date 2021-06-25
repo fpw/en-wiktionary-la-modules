@@ -2,7 +2,7 @@ import zlib = require("zlib");
 import readline = require("readline");
 import "mocha";
 import { createReadStream, existsSync } from "fs";
-import { expect, should } from "chai";
+import { expect } from "chai";
 import { LaEngine } from "../src/LaEngine";
 import { Conjugation, ConjugationData, ConjugationInfo } from "../src/modules/conjugation/LaVerb";
 import { remove_html, remove_links } from "../src/modules/common";
@@ -22,14 +22,11 @@ interface InflectionData {
 }
 
 describe("engine", () => {
-    const engine = new LaEngine();
-
-    it("should match all test data", function() {
+    it("should match all test data", async function() {
         this.timeout(0);
 
         // get from https://folko.solhost.org/wiktionary/la-test-vectors.gz
         const file = "./tests/data/la-test-vectors.gz";
-
         if (!existsSync(file)) {
             return;
         }
@@ -39,18 +36,14 @@ describe("engine", () => {
                     .pipe(zlib.createGunzip())
         });
 
-        reader.on("line", line => {
+        const engine = new LaEngine();
+        for await (const line of reader) {
             checkEntry(engine, JSON.parse(line) as TestVector);
-        });
-
-        return new Promise<void>(accept => {
-            reader.once("close", () => {
-                accept();
-            });
-        });
+        }
     });
 
     it("should decline gerunds as ndecl", () => {
+        const engine = new LaEngine();
         const data = engine.parse_template("{{la-decl-gerund|amandum}}", "amandum");
         expect(data.templateType).to.equal("declension");
         if (data.templateType == "declension") {
@@ -59,12 +52,23 @@ describe("engine", () => {
     });
 
     it("should conjugate revertī correctly", () => {
+        const engine = new LaEngine();
         const data = engine.parse_template("{{la-conj|3.semi-depon|revertor|revers}}", "reverti");
         expect(data.templateType).to.equal("conjugation");
         if (data.templateType == "conjugation") {
             expect(data.data.forms.get(VerbForm.pres_actv_indc_2s)).to.contain("reverteris");
             expect(data.data.forms.get(VerbForm.perf_actv_indc_2s)).to.contain("revertistī");
         }
+    });
+
+    it("should conjugate īre correctly", () => {
+        const engine = new LaEngine({
+            verbOptions: {
+                ireWithShortPerfInf: true,
+            }
+        });
+        const data = engine.conjugate_verb("{{la-conj|irreg|trānseō}}");
+        expect(data.data.forms.get(VerbForm.perf_actv_inf)).to.contain("trānsiisse");
     });
 });
 

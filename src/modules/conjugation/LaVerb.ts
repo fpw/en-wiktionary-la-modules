@@ -40,6 +40,9 @@ export interface ConjOptions {
 
     // suppress poetic forms that are set using options like poetsyncperf
     suppressPoet?: boolean;
+
+    // use short i in perfect infinitive of īre (iisse vs īsse)
+    ireWithShortPerfInf?: boolean;
 }
 
 export interface Conjugation {
@@ -2049,7 +2052,10 @@ export class LaVerb {
             setVerbForm(data.forms, "pres_actv_inf", [prefix + "īre"]);
             setVerbForm(data.forms, "pres_pasv_inf", [prefix + "īrī"]);
 
-            setVerbForm(data.forms, "perf_actv_inf", [prefix + "īsse"]);
+            if (!this.options.ireWithShortPerfInf) {
+                // guard added by @fpw for FR style iisse
+                setVerbForm(data.forms, "perf_actv_inf", [prefix + "īsse"]);
+            }
             setVerbForm(data.forms, "pres_actv_ptc", [prefix + "iēns"]);
 
             this.make_gerund(data, typeinfo, prefix + "eund");
