@@ -384,24 +384,27 @@ export class LaVerb {
             this.make_pres_4th(data, typeinfo, typeinfo.pres_stem);
             this.make_perf_and_supine(data, typeinfo);
 
-            if (this.form_contains(getVerbForm(data.forms, "1s_pres_actv_indc"), "serviō") || this.form_contains(getVerbForm(data.forms, "1s_pres_actv_indc"), "saeviō")) {
-                this.add_forms(data, "impf_actv_indc", typeinfo.pres_stem,
-                    ["iēbam", "ībam"],
-                    ["iēbās", "ībās"],
-                    ["iēbat", "ībat"],
-                    ["iēbāmus", "ībāmus"],
-                    ["iēbātis", "ībātis"],
-                    ["iēbant", "ībant"]
-                );
+            if (!this.options.suppressPoet) {
+                // guard added by @fpw
+                if (this.form_contains(getVerbForm(data.forms, "1s_pres_actv_indc"), "serviō") || this.form_contains(getVerbForm(data.forms, "1s_pres_actv_indc"), "saeviō")) {
+                    this.add_forms(data, "impf_actv_indc", typeinfo.pres_stem,
+                        ["iēbam", "ībam"],
+                        ["iēbās", "ībās"],
+                        ["iēbat", "ībat"],
+                        ["iēbāmus", "ībāmus"],
+                        ["iēbātis", "ībātis"],
+                        ["iēbant", "ībant"]
+                    );
 
-                this.add_forms(data, "futr_actv_indc", typeinfo.pres_stem,
-                    ["iam", "ībō"],
-                    ["iēs", "ībis"],
-                    ["iet", "ībit"],
-                    ["iēmus", "ībimus"],
-                    ["iētis", "ībitis"],
-                    ["ient", "ībunt"]
-                );
+                    this.add_forms(data, "futr_actv_indc", typeinfo.pres_stem,
+                        ["iam", "ībō"],
+                        ["iēs", "ībis"],
+                        ["iet", "ībit"],
+                        ["iēmus", "ībimus"],
+                        ["iētis", "ībitis"],
+                        ["ient", "ībunt"]
+                    );
+                }
             }
 
             if (hasVerbType(typeinfo.subtypes, "alwayssyncperf") || hasVerbType(typeinfo.subtypes, "optsyncperf")) {
@@ -2114,10 +2117,15 @@ export class LaVerb {
 
             this.make_pres_3rd(data, typeinfo, prefix_pres + "fer");
             if (!prefix_perf) {
-                this.make_perf(data, ["tul", "tetul"]);
-                for (const slot of this.iter_slots(false, false)) {
-                    if (slot.match(/perf/) || slot.match(/plup/) || slot.match(/futp/)) {
-                        data.footnotes.set(slot, ["Archaic."]);
+                if (this.options.suppressPoet) {
+                    // added by @fpw
+                    this.make_perf(data, ["tul"]);
+                } else {
+                    this.make_perf(data, ["tul", "tetul"]);
+                    for (const slot of this.iter_slots(false, false)) {
+                        if (slot.match(/perf/) || slot.match(/plup/) || slot.match(/futp/)) {
+                            data.footnotes.set(slot, ["Archaic."]);
+                        }
                     }
                 }
             } else {
