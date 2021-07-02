@@ -53,7 +53,7 @@ export function read_list(args: ArgMap, elem: string): string[] {
         entries[idx] = value;
     }
 
-    return entries;
+    return entries.filter(x => x !== undefined);
 }
 
 /**

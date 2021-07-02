@@ -70,6 +70,12 @@ describe("engine", () => {
         const data = engine.conjugate_verb("{{la-conj|irreg|trānseō}}");
         expect(data.data.forms.get(VerbForm.perf_actv_inf)).to.contain("trānsiisse");
     });
+
+    it("should not return empty headwords", () => {
+        const engine = new LaEngine();
+        const data = engine.parse_headword("{{la-adv|ibi|-|head2=ibī}}", "ibi");
+        expect(data.heads.length).to.equal(2);
+    });
 });
 
 function checkEntry(engine: LaEngine, entry: TestVector): void {
