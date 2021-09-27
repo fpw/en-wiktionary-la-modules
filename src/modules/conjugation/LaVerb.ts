@@ -5,7 +5,7 @@
  * A few new options to suppress certain rate forms were added.
  *
  * Original source: https://en.wiktionary.org/wiki/Module:la-verb
- * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-verb&oldid=61433260
+ * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-verb&oldid=63102127
  *
  * Lua idioms, function and variable names kept as in the original in order to easily
  * backport later changes to this implementation.
@@ -2254,6 +2254,7 @@ export class LaVerb {
 
         this.irreg_conjugations.set("volo", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
             data.categories.push("Latin irregular verbs");
+            data.categories.push("Latin suppletive verbs");
 
             const prefix = typeinfo.prefix;
 
@@ -2266,6 +2267,7 @@ export class LaVerb {
 
         this.irreg_conjugations.set("malo", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
             data.categories.push("Latin irregular verbs");
+            data.categories.push("Latin suppletive verbs");
 
             addVerbType(typeinfo.subtypes, "nopass");
             addVerbType(typeinfo.subtypes, "noimp");
@@ -2276,6 +2278,7 @@ export class LaVerb {
 
         this.irreg_conjugations.set("nolo", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
             data.categories.push("Latin irregular verbs");
+            data.categories.push("Latin suppletive verbs");
 
             addVerbType(typeinfo.subtypes, "nopass");
 

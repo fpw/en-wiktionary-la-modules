@@ -3,7 +3,7 @@
  * It was converted from Lua to TypeScript by Folke Will <folko@solhost.org>.
  *
  * Original source: https://en.wiktionary.org/wiki/Module:la-noun/data
- * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-noun/data&oldid=61773265
+ * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-noun/data&oldid=63744261
  *
  * Lua idioms, function and variable names kept as in the original in order to easily
  * backport later changes to this implementation.
@@ -708,7 +708,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "loc_pl", ["domibus"]);
 
             data.loc = true;
-        } else if (stem == "Iēsus" || stem == "Jēsus" || stem == "Iēsūs" || stem == "Jēsūs") {
+        } else if (stem == "Iēsus" || stem == "Iēsūs") {
             data.subtitles.push("highly irregular");
             const ij = stem[0];
             setNominalForm(data.forms, "nom_sg", [stem]);
@@ -717,6 +717,16 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "acc_sg", [ij + "ēsum"]);
             setNominalForm(data.forms, "abl_sg", [ij + "ēsū"]);
             setNominalForm(data.forms, "voc_sg", [ij + "ēsū"]);
+            data.num = NumberTantum.Singular;
+        } else if (stem == "Jesus") {
+            data.subtitles.push("highly irregular");
+            const ij = stem[0];
+            setNominalForm(data.forms, "nom_sg", [stem]);
+            setNominalForm(data.forms, "gen_sg", [ij + "esu"]);
+            setNominalForm(data.forms, "dat_sg", [ij + "esu"]);
+            setNominalForm(data.forms, "acc_sg", [ij + "esum"]);
+            setNominalForm(data.forms, "abl_sg", [ij + "esu"]);
+            setNominalForm(data.forms, "voc_sg", [ij + "esu"]);
             data.num = NumberTantum.Singular;
         } else if (stem == "iūgerum" || stem == "jūgerum") {
             const ij = stem[0];

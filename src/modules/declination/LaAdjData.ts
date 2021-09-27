@@ -3,7 +3,7 @@
  * It was converted from Lua to TypeScript by Folke Will <folko@solhost.org>.
  *
  * Original source: https://en.wiktionary.org/wiki/Module:la-adj/data
- * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-adj/data&oldid=62514179
+ * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-adj/data&oldid=63799019
  *
  * Lua idioms, function and variable names kept as in the original in order to easily
  * backport later changes to this implementation.
@@ -558,6 +558,24 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
 
             setNominalForm(data.forms, "voc_sg_m", ["mīlle"]);
             setNominalForm(data.forms, "voc_pl_m", ["mīlia", "mīllia"]);
+        } else if (args[0] == "illic") {
+            data.title = "demonstrative pronoun";
+            setNominalForm(data.forms, "nom_sg_m", ["illic"]);
+            setNominalForm(data.forms, "nom_sg_f", ["illaec"]);
+            setNominalForm(data.forms, "nom_sg_n", ["illuc", "illoc"]);
+            setNominalForm(data.forms, "nom_pl_n", ["illaec"]);
+
+            setNominalForm(data.forms, "nom_sg_m", ["illunc"]);
+            setNominalForm(data.forms, "nom_sg_f", ["illanc"]);
+            setNominalForm(data.forms, "nom_sg_n", ["illuc", "illoc"]);
+            setNominalForm(data.forms, "nom_pl_n", ["illaec"]);
+
+            setNominalForm(data.forms, "abl_sg_m", ["illōc"]);
+            setNominalForm(data.forms, "abl_sg_f", ["illāc"]);
+            setNominalForm(data.forms, "abl_sg_n", ["illōc"]);
+
+            data.voc = false;
+
         } else if (args[0] == "plūs") {
             data.title = "irregular third-declension comparative adjective";
 
@@ -717,13 +735,14 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             data.categories = [];
         } else if (args[0] == "quis" || args[0] == "quī") {
             let id = "id";
-            let em = "em";
-            let o = "ō";
 
             if (args[0] == "quī") {
                 id = "od";
-                em = "am";
-                o = "ā";
+                setNominalForm(data.forms, "acc_sg_f", ["quam"]);
+                setNominalForm(data.forms, "abl_sg_f", ["quā"]);
+            } else {
+                setNominalForm(data.forms, "acc_sg_f", ["quem"]);
+                setNominalForm(data.forms, "abl_sg_f", ["quō"]);
             }
             data.title = "relative/interrogative pronoun";
 
@@ -749,14 +768,12 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "dat_pl_n", ["quibus", "quīs"]);
 
             setNominalForm(data.forms, "acc_sg_m", ["quem"]);
-            setNominalForm(data.forms, "acc_sg_f", ["qu" + em, "quam"]);
             setNominalForm(data.forms, "acc_sg_n", ["qu" + id]);
             setNominalForm(data.forms, "acc_pl_m", ["quōs"]);
             setNominalForm(data.forms, "acc_pl_f", ["quās"]);
             setNominalForm(data.forms, "acc_pl_n", ["quae"]);
 
             setNominalForm(data.forms, "abl_sg_m", ["quō"]);
-            setNominalForm(data.forms, "abl_sg_f", ["qu" + o, "quā"]);
             setNominalForm(data.forms, "abl_sg_n", ["quō"]);
             setNominalForm(data.forms, "abl_pl_m", ["quibus", "quīs"]);
             setNominalForm(data.forms, "abl_pl_f", ["quibus", "quīs"]);

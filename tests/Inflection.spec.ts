@@ -215,7 +215,7 @@ function compareNominal(luaData: any, jsData: DeclensionData) {
     // compare title
     const titleShould = remove_links(luaData.title).replace(/''/g, "'");
     const titleIs = remove_links(jsData.title).replace(/''/g, "'");
-    expect(titleShould).to.equal(titleIs);
+    expect(titleIs).to.equal(titleShould);
 
     // compare pos
     expect(luaData.pos).to.equal(jsData.pos);

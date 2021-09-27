@@ -353,6 +353,9 @@ export class LaNominal {
             if (from_headword) {
                 declensions_title = declensions_title[0].toLowerCase() + declensions_title.replace(/\.$/, "").substr(1);
             } else {
+                if (declensions_title.startsWith(" ")) {
+                    declensions_title = declensions_title.substr(1);
+                }
                 declensions_title = declensions_title[0].toUpperCase() + declensions_title.substr(1);
             }
         } else {
@@ -1048,7 +1051,7 @@ export class LaNominal {
                 } else {
                     base = extract_base(lemma, ending);
                 }
-                if (base) {
+                if (base !== undefined) {
                     const new_subtypes = [];
                     for (const subtype of subtypes) {
                         if (!subtype.startsWith("-")) {
