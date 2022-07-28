@@ -38,7 +38,12 @@ describe("engine", () => {
 
         const engine = new LaEngine();
         for await (const line of reader) {
-            checkEntry(engine, JSON.parse(line) as TestVector);
+            try {
+                checkEntry(engine, JSON.parse(line) as TestVector);
+            } catch (e) {
+                console.log(`In ${line}:`);
+                throw e;
+            }
         }
     });
 
@@ -123,7 +128,7 @@ function compareVerbData(luaData: any, jsData: ConjugationData) {
     expect(luaData.overriding_lemma || []).to.eql(jsData.overriding_lemma || []);
 
     // compare categories
-    const luaCategories = luaData.categories.filter((c: string) => !c.includes("red links"));
+    const luaCategories = luaData.categories.filter((c: string) => !c.includes("red links") && !c.includes("sigmatic"));
     expect(luaCategories).to.eql(jsData.categories);
 
     // compare presuf
@@ -291,6 +296,9 @@ function compareForms(jsEntry: Map<string, string[]>, luaEntry: Map<string, stri
     }
 
     for (const key of luaEntry.keys()) {
+        if (key.match("sigf") || key.match("sigm") || key.match("siga")) {
+            continue;
+        }
         keys.add(key);
     }
 

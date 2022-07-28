@@ -29,6 +29,7 @@ export enum VerbType {
     FemininePlural = "fp",
     NeuterPlural = "np",
     HighlyDefective = "highlydef",
+    SigM = "sigm",
 
     NoIStem = "-I",
     NoDeponent = "-depon",

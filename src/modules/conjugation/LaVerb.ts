@@ -131,6 +131,7 @@ export class LaVerb {
         "fp",
         "np",
         "highlydef",
+        "sigm",
     ]);
 
     private static potential_lemma_slots = [
