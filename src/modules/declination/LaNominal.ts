@@ -17,6 +17,14 @@ import { m_adj_decl } from "./LaAdjData";
 import { m_noun_decl } from "./LaNounData";
 import { getNominalForm, NominalForm, setNominalForm } from "./NominalForm";
 
+export interface DeclOptions {
+    suppressOldGenitive?: boolean;
+    suppressNonNeuterIStemAccIs?: boolean;
+    suppressRareIrregForms?: boolean;
+    populateAllTerminations?: boolean;
+    suppressAdjPtcForms?: boolean;
+}
+
 export enum Gender {
     M = "M",
     F = "F",
@@ -126,6 +134,7 @@ export interface AdjectiveData extends DeclensionData {
 }
 
 export interface SegmentData {
+    declOpts: DeclOptions;
     title?: string;
     subtitles: (string | string[])[];
     footnote: string;
@@ -143,14 +152,16 @@ export interface SegmentData {
     noneut?: boolean;
 }
 
-type EndingTable = [string | string[],
-                string,
-                string[],
-                ((base: string, stem2: string) => [string, string])?
-            ][];
+type EndingTable = [
+    string | string[],
+    string,
+    string[],
+    ((base: string, stem2: string) => [string, string])?
+][];
 
 export class LaNominal {
     public static readonly EmptyForm = "—";
+    private readonly options: DeclOptions;
     private readonly cases = ["nom", "gen", "dat", "acc", "abl", "voc", "loc"];
     private readonly genders = ["m", "f", "n"];
     private readonly nums = ["sg", "pl"];
@@ -208,6 +219,10 @@ export class LaNominal {
         ["4", "fourth"],
         ["5", "fifth"],
     ]);
+
+    public constructor(options?: DeclOptions) {
+        this.options = options || {};
+    }
 
     public do_generate_noun_forms(args: ArgMap, pos: string = "nouns", from_headword = false): NounData {
         const parsed_run = this.parse_segment_run_allowing_alternants(args.get("1")?.trim() || "");
@@ -467,7 +482,7 @@ export class LaNominal {
                 }
             }
 
-            if (other_is_masc) {
+            if (other_is_masc && !this.options.populateAllTerminations) {
                 for (const cas of this.cases) {
                     for (const num of this.nums) {
                         setNominalForm(data.forms, cas + "_" + num + "_" + gender, undefined);
@@ -1347,6 +1362,7 @@ export class LaNominal {
 
                     potential_lemma_slots = this.potential_adj_lemma_slots;
                     data = {
+                        declOpts: this.options,
                         subtitles: [],
                         footnote: "",
                         num: seg.num,
@@ -1398,6 +1414,7 @@ export class LaNominal {
                     }
                     potential_lemma_slots = this.potential_noun_lemma_slots;
                     data = {
+                        declOpts: this.options,
                         subtitles: [],
                         footnote: "",
                         num: seg.num,

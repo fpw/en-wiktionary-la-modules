@@ -108,7 +108,11 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
 
             if (data.types.has("ium")) {
                 setNominalForm(data.forms, "nom_sg", [stem1 + "ium"]);
-                setNominalForm(data.forms, "gen_sg", [stem1 + "iī", stem1 + "ī"]);
+                if (!data.declOpts.suppressOldGenitive) {
+                    setNominalForm(data.forms, "gen_sg", [stem1 + "iī", stem1 + "ī"]);
+                } else {
+                    setNominalForm(data.forms, "gen_sg", [stem1 + "iī"]);
+                }
                 setNominalForm(data.forms, "dat_sg", [stem1 + "iō"]);
                 setNominalForm(data.forms, "acc_sg", [stem1 + "ium"]);
                 setNominalForm(data.forms, "abl_sg", [stem1 + "iō"]);
@@ -121,7 +125,9 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 setNominalForm(data.forms, "abl_pl", [stem1 + "iīs"]);
                 setNominalForm(data.forms, "voc_pl", [stem1 + "ia"]);
 
-                data.notes.set("gen_sg2", "Found in older Latin (until the Augustan Age).");
+                if (!data.declOpts.suppressOldGenitive) {
+                    data.notes.set("gen_sg2", "Found in older Latin (until the Augustan Age).");
+                }
             } else if (data.types.has("a")) {
                 data.subtitles.push("nominative/accusative/vocative plural in '-a'");
 
@@ -188,7 +194,11 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "voc_pl", [stem2 + "ī"]);
         } else if (data.types.has("ius")) {
             setNominalForm(data.forms, "nom_sg", [stem1 + "ius"]);
-            setNominalForm(data.forms, "gen_sg", [stem1 + "iī", stem1 + "ī"]);
+            if (!data.declOpts.suppressOldGenitive) {
+                setNominalForm(data.forms, "gen_sg", [stem1 + "iī", stem1 + "ī"]);
+            } else {
+                setNominalForm(data.forms, "gen_sg", [stem1 + "iī"]);
+            }
             setNominalForm(data.forms, "dat_sg", [stem1 + "iō"]);
             setNominalForm(data.forms, "acc_sg", [stem1 + "ium"]);
             setNominalForm(data.forms, "abl_sg", [stem1 + "iō"]);
@@ -206,7 +216,9 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "abl_pl", [stem1 + "iīs"]);
             setNominalForm(data.forms, "voc_pl", [stem1 + "iī"]);
 
-            data.notes.set("gen_sg2", "Found in older Latin (until the Augustan Age).");
+            if (!data.declOpts.suppressOldGenitive) {
+                data.notes.set("gen_sg2", "Found in older Latin (until the Augustan Age).");
+            }
         } else if (data.types.has("vos")) {
             data.subtitles.push("nominative singular in '-os' after 'v'");
             setNominalForm(data.forms, "nom_sg", [stem1 + "os"]);
@@ -432,7 +444,11 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             }
 
             setNominalForm(data.forms, "gen_pl", [stem2 + "ium"]);
-            setNominalForm(data.forms, "acc_pl", [stem2 + "ēs", stem2 + "īs"]);
+            if (!data.declOpts.suppressNonNeuterIStemAccIs) {
+                setNominalForm(data.forms, "acc_pl", [stem2 + "ēs", stem2 + "īs"]);
+            } else {
+                setNominalForm(data.forms, "acc_pl", [stem2 + "ēs"]);
+            }
 
             for (const subtype of data.types) {
                 const acc_sg_i_stem_props = acc_sg_i_stem_subtypes.get(subtype);
@@ -645,9 +661,14 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
 
             setNominalForm(data.forms, "nom_pl", ["bovēs"]);
             setNominalForm(data.forms, "gen_pl", ["boum"]);
-            setNominalForm(data.forms, "dat_pl", ["bōbus", "būbus"]);
+            if (!data.declOpts.suppressRareIrregForms) {
+                setNominalForm(data.forms, "dat_pl", ["bōbus", "būbus"]);
+                setNominalForm(data.forms, "abl_pl", ["bōbus", "būbus"]);
+            } else {
+                setNominalForm(data.forms, "dat_pl", ["bōbus"]);
+                setNominalForm(data.forms, "abl_pl", ["bōbus"]);
+            }
             setNominalForm(data.forms, "acc_pl", ["bovēs"]);
-            setNominalForm(data.forms, "abl_pl", ["bōbus", "būbus"]);
             setNominalForm(data.forms, "voc_pl", ["bovēs"]);
         } else if (stem == "cherub") {
             data.title = "mostly indeclinable";
@@ -692,17 +713,27 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             data.title = "fourth/second-declension noun";
 
             setNominalForm(data.forms, "nom_sg", ["domus"]);
-            setNominalForm(data.forms, "gen_sg", ["domūs", "domī"]);
-            setNominalForm(data.forms, "dat_sg", ["domuī", "domō", "domū"]);
+            if (!data.declOpts.suppressRareIrregForms) {
+                setNominalForm(data.forms, "gen_sg", ["domūs", "domī"]);
+                setNominalForm(data.forms, "dat_sg", ["domuī", "domō", "domū"]);
+                setNominalForm(data.forms, "abl_sg", ["domū", "domō"]);
+
+                setNominalForm(data.forms, "gen_pl", ["domuum", "domōrum"]);
+                setNominalForm(data.forms, "acc_pl", ["domūs", "domōs"]);
+            } else {
+                setNominalForm(data.forms, "gen_sg", ["domūs"]);
+                setNominalForm(data.forms, "dat_sg", ["domuī"]);
+                setNominalForm(data.forms, "abl_sg", ["domō"]);
+
+                setNominalForm(data.forms, "gen_pl", ["domuum"]);
+                setNominalForm(data.forms, "acc_pl", ["domōs"]);
+            }
             setNominalForm(data.forms, "acc_sg", ["domum"]);
-            setNominalForm(data.forms, "abl_sg", ["domū", "domō"]);
             setNominalForm(data.forms, "voc_sg", ["domus"]);
             setNominalForm(data.forms, "loc_sg", ["domī"]);
 
             setNominalForm(data.forms, "nom_pl", ["domūs"]);
-            setNominalForm(data.forms, "gen_pl", ["domuum", "domōrum"]);
             setNominalForm(data.forms, "dat_pl", ["domibus"]);
-            setNominalForm(data.forms, "acc_pl", ["domūs", "domōs"]);
             setNominalForm(data.forms, "abl_pl", ["domibus"]);
             setNominalForm(data.forms, "voc_pl", ["domūs"]);
             setNominalForm(data.forms, "loc_pl", ["domibus"]);
@@ -804,9 +835,16 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             data.subtitles.push("irregular");
             data.subtitles.push("defective");
 
+            if (!data.declOpts.suppressRareIrregForms) {
+                setNominalForm(data.forms, "gen_sg", ["*vīs"]);
+                setNominalForm(data.forms, "dat_sg", ["*vī"]);
+
+                setNominalForm(data.forms, "acc_pl", ["vīrēs", "vīrīs"]);
+            } else {
+                setNominalForm(data.forms, "acc_pl", ["vīrēs"]);
+            }
+
             setNominalForm(data.forms, "nom_sg", ["vīs"]);
-            setNominalForm(data.forms, "gen_sg", ["*vīs"]);
-            setNominalForm(data.forms, "dat_sg", ["*vī"]);
             setNominalForm(data.forms, "acc_sg", ["vim"]);
             setNominalForm(data.forms, "abl_sg", ["vī"]);
             setNominalForm(data.forms, "voc_sg", ["vīs"]);
@@ -814,7 +852,6 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "nom_pl", ["vīrēs"]);
             setNominalForm(data.forms, "gen_pl", ["vīrium"]);
             setNominalForm(data.forms, "dat_pl", ["vīribus"]);
-            setNominalForm(data.forms, "acc_pl", ["vīrēs", "vīrīs"]);
             setNominalForm(data.forms, "abl_pl", ["vīribus"]);
             setNominalForm(data.forms, "voc_pl", ["vīrēs"]);
         } else {

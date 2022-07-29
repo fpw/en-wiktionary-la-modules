@@ -387,11 +387,22 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
         }
         d(data, args);
         data.title = "third-declension participle";
-        setNominalForm(data.forms, "abl_sg_m", [stem2 + "e", stem2 + "ī"]);
-        data.notes.set("abl_sg_m2", "When used purely as an adjective.");
-        setNominalForm(data.forms, "abl_sg_n", [stem2 + "e", stem2 + "ī"]);
-        data.notes.set("abl_sg_n2", "When used purely as an adjective.");
-        setNominalForm(data.forms, "acc_pl_m", [stem2 + "ēs", stem2 + "īs"]);
+
+        if (!data.declOpts.suppressAdjPtcForms) {
+            setNominalForm(data.forms, "abl_sg_m", [stem2 + "e", stem2 + "ī"]);
+            data.notes.set("abl_sg_m2", "When used purely as an adjective.");
+            setNominalForm(data.forms, "abl_sg_n", [stem2 + "e", stem2 + "ī"]);
+            data.notes.set("abl_sg_n2", "When used purely as an adjective.");
+        } else {
+            setNominalForm(data.forms, "abl_sg_m", [stem2 + "ī"]);
+            setNominalForm(data.forms, "abl_sg_n", [stem2 + "ī"]);
+        }
+
+        if (!data.declOpts.suppressNonNeuterIStemAccIs) {
+            setNominalForm(data.forms, "acc_pl_m", [stem2 + "ēs", stem2 + "īs"]);
+        } else {
+            setNominalForm(data.forms, "acc_pl_m", [stem2 + "ēs"]);
+        }
     }],
     ["3-2", (data, args) => {
         const singpos = singularize(data.pos);
@@ -421,7 +432,11 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
 
         setNominalForm(data.forms, "acc_sg_m", [stem + "em"]);
         setNominalForm(data.forms, "acc_sg_n", [stem + "e"]);
-        setNominalForm(data.forms, "acc_pl_m", [stem + "ēs", stem + "īs"]);
+        if (!data.declOpts.suppressNonNeuterIStemAccIs) {
+            setNominalForm(data.forms, "acc_pl_m", [stem + "ēs", stem + "īs"]);
+        } else {
+            setNominalForm(data.forms, "acc_pl_m", [stem + "ēs"]);
+        }
         setNominalForm(data.forms, "acc_pl_n", [stem + "ia"]);
 
         setNominalForm(data.forms, "abl_sg_m", [stem + "ī"]);
@@ -617,11 +632,45 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             const note1 = "The dat. singular is found spelled EIEI (here represented as 'ēī') and scanned as two longs in Plautus, but also as a monosyllable. The latter is its normal scansion in Classical. Other spellings include EEI, IEI.";
             const note2 = "The nom./dat./abl. plural forms regularly developed into a monosyllable  /iː(s)/, with later remodelling - compare the etymology of deus. This /iː/ was normally spelled as EI during and as II after the Republic; a disyllabic 'iī', spelled II, Iꟾ, apears in Silver Age poetry, while disyllabic 'eīs' is only post-Classical. Other spellings include EEI(S), EIEI(S), IEI(S).";
 
+            if (!data.declOpts.suppressRareIrregForms) {
+                setNominalForm(data.forms, "nom_pl_m", ["ī", "iī", "eī"]);
+                data.notes.set("nom_pl_m1", note2);
+
+                setNominalForm(data.forms, "dat_sg_m", ["ei", "ēī"]);
+                data.notes.set("dat_sg_m1", note1);
+                setNominalForm(data.forms, "dat_sg_f", ["ei", "ēī"]);
+                data.notes.set("dat_sg_f1", note1);
+                setNominalForm(data.forms, "dat_sg_n", ["ei", "ēī"]);
+                data.notes.set("dat_sg_n1", note1);
+                setNominalForm(data.forms, "dat_pl_m", ["īs", "iīs", "eīs"]);
+                data.notes.set("dat_pl_m1", note2);
+                setNominalForm(data.forms, "dat_pl_f", ["īs", "iīs", "eīs"]);
+                data.notes.set("dat_pl_f1", note2);
+                setNominalForm(data.forms, "dat_pl_n", ["īs", "iīs", "eīs"]);
+                data.notes.set("dat_pl_n1", note2);
+
+                setNominalForm(data.forms, "abl_pl_m", ["īs", "iīs", "eīs"]);
+                data.notes.set("abl_pl_m1", note2);
+                setNominalForm(data.forms, "abl_pl_f", ["īs", "iīs", "eīs"]);
+                data.notes.set("abl_pl_f1", note2);
+                setNominalForm(data.forms, "abl_pl_n", ["īs", "iīs", "eīs"]);
+                data.notes.set("abl_pl_n1", note2);
+            } else {
+                setNominalForm(data.forms, "nom_pl_m", ["iī"]);
+                setNominalForm(data.forms, "dat_sg_m", ["eī"]);
+                setNominalForm(data.forms, "dat_sg_f", ["eī"]);
+                setNominalForm(data.forms, "dat_sg_n", ["eī"]);
+                setNominalForm(data.forms, "dat_pl_m", ["iīs"]);
+                setNominalForm(data.forms, "dat_pl_f", ["iīs"]);
+                setNominalForm(data.forms, "dat_pl_n", ["iīs"]);
+                setNominalForm(data.forms, "abl_pl_m", ["iīs"]);
+                setNominalForm(data.forms, "abl_pl_f", ["iīs"]);
+                setNominalForm(data.forms, "abl_pl_n", ["iīs"]);
+            }
+
             setNominalForm(data.forms, "nom_sg_m", ["is"]);
             setNominalForm(data.forms, "nom_sg_f", ["ea"]);
             setNominalForm(data.forms, "nom_sg_n", ["id"]);
-            setNominalForm(data.forms, "nom_pl_m", ["ī", "iī", "eī"]);
-            data.notes.set("nom_pl_m1", note2);
             setNominalForm(data.forms, "nom_pl_f", ["eae"]);
             setNominalForm(data.forms, "nom_pl_n", ["ea"]);
 
@@ -631,19 +680,6 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "gen_pl_m", ["eōrum"]);
             setNominalForm(data.forms, "gen_pl_f", ["eārum"]);
             setNominalForm(data.forms, "gen_pl_n", ["eōrum"]);
-
-            setNominalForm(data.forms, "dat_sg_m", ["ei", "ēī"]);
-            data.notes.set("dat_sg_m1", note1);
-            setNominalForm(data.forms, "dat_sg_f", ["ei", "ēī"]);
-            data.notes.set("dat_sg_f1", note1);
-            setNominalForm(data.forms, "dat_sg_n", ["ei", "ēī"]);
-            data.notes.set("dat_sg_n1", note1);
-            setNominalForm(data.forms, "dat_pl_m", ["īs", "iīs", "eīs"]);
-            data.notes.set("dat_pl_m1", note2);
-            setNominalForm(data.forms, "dat_pl_f", ["īs", "iīs", "eīs"]);
-            data.notes.set("dat_pl_f1", note2);
-            setNominalForm(data.forms, "dat_pl_n", ["īs", "iīs", "eīs"]);
-            data.notes.set("dat_pl_n1", note2);
 
             setNominalForm(data.forms, "acc_sg_m", ["eum"]);
             setNominalForm(data.forms, "acc_sg_f", ["eam"]);
@@ -655,12 +691,6 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "abl_sg_m", ["eō"]);
             setNominalForm(data.forms, "abl_sg_f", ["eā"]);
             setNominalForm(data.forms, "abl_sg_n", ["eō"]);
-            setNominalForm(data.forms, "abl_pl_m", ["īs", "iīs", "eīs"]);
-            data.notes.set("abl_pl_m1", note2);
-            setNominalForm(data.forms, "abl_pl_f", ["īs", "iīs", "eīs"]);
-            data.notes.set("abl_pl_f1", note2);
-            setNominalForm(data.forms, "abl_pl_n", ["īs", "iīs", "eīs"]);
-            data.notes.set("abl_pl_n1", note2);
 
             data.voc = false;
 
@@ -669,12 +699,19 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
                 setNominalForm(data.forms, "nom_sg_n", ["i"]);
                 setNominalForm(data.forms, "nom_pl_m", ["ī"]);
 
-                setNominalForm(data.forms, "gen_pl_m", ["eōrun", "eōrum"]);
-                setNominalForm(data.forms, "gen_pl_f", ["eārun", "eārum"]);
-                setNominalForm(data.forms, "gen_pl_n", ["eōrun", "eōrum"]);
-
-                setNominalForm(data.forms, "acc_sg_m", ["eun", "eum"]);
-                setNominalForm(data.forms, "acc_sg_f", ["ean", "eam"]);
+                if (!data.declOpts.suppressRareIrregForms) {
+                    setNominalForm(data.forms, "gen_pl_m", ["eōrun", "eōrum"]);
+                    setNominalForm(data.forms, "gen_pl_f", ["eārun", "eārum"]);
+                    setNominalForm(data.forms, "gen_pl_n", ["eōrun", "eōrum"]);
+                    setNominalForm(data.forms, "acc_sg_m", ["eun", "eum"]);
+                    setNominalForm(data.forms, "acc_sg_f", ["ean", "eam"]);
+                } else {
+                    setNominalForm(data.forms, "gen_pl_m", ["eōrun"]);
+                    setNominalForm(data.forms, "gen_pl_f", ["eārun"]);
+                    setNominalForm(data.forms, "gen_pl_n", ["eōrun"]);
+                    setNominalForm(data.forms, "acc_sg_m", ["eun"]);
+                    setNominalForm(data.forms, "acc_sg_f", ["ean"]);
+                }
                 setNominalForm(data.forms, "acc_sg_n", ["i"]);
             }
         } else if (args[0] == "ille") {
@@ -763,9 +800,23 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "dat_sg_m", ["cui"]);
             setNominalForm(data.forms, "dat_sg_f", ["cui"]);
             setNominalForm(data.forms, "dat_sg_n", ["cui"]);
-            setNominalForm(data.forms, "dat_pl_m", ["quibus", "quīs"]);
-            setNominalForm(data.forms, "dat_pl_f", ["quibus", "quīs"]);
-            setNominalForm(data.forms, "dat_pl_n", ["quibus", "quīs"]);
+            if (!data.declOpts.suppressRareIrregForms) {
+                setNominalForm(data.forms, "dat_pl_m", ["quibus", "quīs"]);
+                setNominalForm(data.forms, "dat_pl_f", ["quibus", "quīs"]);
+                setNominalForm(data.forms, "dat_pl_n", ["quibus", "quīs"]);
+
+                setNominalForm(data.forms, "abl_pl_m", ["quibus", "quīs"]);
+                setNominalForm(data.forms, "abl_pl_f", ["quibus", "quīs"]);
+                setNominalForm(data.forms, "abl_pl_n", ["quibus", "quīs"]);
+            } else {
+                setNominalForm(data.forms, "dat_pl_m", ["quibus"]);
+                setNominalForm(data.forms, "dat_pl_f", ["quibus"]);
+                setNominalForm(data.forms, "dat_pl_n", ["quibus"]);
+
+                setNominalForm(data.forms, "abl_pl_m", ["quibus"]);
+                setNominalForm(data.forms, "abl_pl_f", ["quibus"]);
+                setNominalForm(data.forms, "abl_pl_n", ["quibus"]);
+            }
 
             setNominalForm(data.forms, "acc_sg_m", ["quem"]);
             setNominalForm(data.forms, "acc_sg_n", ["qu" + id]);
@@ -775,9 +826,6 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
 
             setNominalForm(data.forms, "abl_sg_m", ["quō"]);
             setNominalForm(data.forms, "abl_sg_n", ["quō"]);
-            setNominalForm(data.forms, "abl_pl_m", ["quibus", "quīs"]);
-            setNominalForm(data.forms, "abl_pl_f", ["quibus", "quīs"]);
-            setNominalForm(data.forms, "abl_pl_n", ["quibus", "quīs"]);
 
             data.voc = false;
 
@@ -789,7 +837,35 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             data.title = "relative/interrogative pronoun";
             setNominalForm(data.forms, "nom_sg_m", ["quisquis"]);
             setNominalForm(data.forms, "nom_sg_f", ["quisquis"]);
-            setNominalForm(data.forms, "nom_sg_n", ["quidquid", "quicquid"]);
+            if (!data.declOpts.suppressRareIrregForms) {
+                setNominalForm(data.forms, "nom_sg_n", ["quidquid", "quicquid"]);
+
+                setNominalForm(data.forms, "dat_pl_m", ["quibusquibus", "quīsquīs"]);
+                setNominalForm(data.forms, "dat_pl_f", ["quibusquibus", "quīsquīs"]);
+                setNominalForm(data.forms, "dat_pl_n", ["quibusquibus", "quīsquīs"]);
+
+                setNominalForm(data.forms, "acc_sg_n", ["quidquid", "quicquid"]);
+
+                setNominalForm(data.forms, "abl_pl_m", ["quibusquibus", "quīsquīs"]);
+                setNominalForm(data.forms, "abl_pl_f", ["quibusquibus", "quīsquīs"]);
+                setNominalForm(data.forms, "abl_pl_n", ["quibusquibus", "quīsquīs"]);
+
+                setNominalForm(data.forms, "voc_sg_n", ["quidquid", "quicquid"]);
+            } else {
+                setNominalForm(data.forms, "nom_sg_n", ["quidquid"]);
+
+                setNominalForm(data.forms, "dat_pl_m", ["quibusquibus"]);
+                setNominalForm(data.forms, "dat_pl_f", ["quibusquibus"]);
+                setNominalForm(data.forms, "dat_pl_n", ["quibusquibus"]);
+
+                setNominalForm(data.forms, "acc_sg_n", ["quidquid"]);
+
+                setNominalForm(data.forms, "abl_pl_m", ["quibusquibus"]);
+                setNominalForm(data.forms, "abl_pl_f", ["quibusquibus"]);
+                setNominalForm(data.forms, "abl_pl_n", ["quibusquibus"]);
+
+                setNominalForm(data.forms, "voc_sg_n", ["quidquid"]);
+            }
             setNominalForm(data.forms, "nom_pl_m", ["quīquī"]);
             setNominalForm(data.forms, "nom_pl_f", ["quaequae"]);
             setNominalForm(data.forms, "nom_pl_n", ["quaequae"]);
@@ -804,13 +880,9 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "dat_sg_m", ["cuicui"]);
             setNominalForm(data.forms, "dat_sg_f", ["cuicui"]);
             setNominalForm(data.forms, "dat_sg_n", ["cuicui"]);
-            setNominalForm(data.forms, "dat_pl_m", ["quibusquibus", "quīsquīs"]);
-            setNominalForm(data.forms, "dat_pl_f", ["quibusquibus", "quīsquīs"]);
-            setNominalForm(data.forms, "dat_pl_n", ["quibusquibus", "quīsquīs"]);
 
             setNominalForm(data.forms, "acc_sg_m", ["quemquem"]);
             setNominalForm(data.forms, "acc_sg_f", ["quamquam"]);
-            setNominalForm(data.forms, "acc_sg_n", ["quidquid", "quicquid"]);
             setNominalForm(data.forms, "acc_pl_m", ["quōsquōs"]);
             setNominalForm(data.forms, "acc_pl_f", ["quāsquās"]);
             setNominalForm(data.forms, "acc_pl_n", ["quaequae"]);
@@ -818,13 +890,9 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "abl_sg_m", ["quōquō"]);
             setNominalForm(data.forms, "abl_sg_f", ["quāquā"]);
             setNominalForm(data.forms, "abl_sg_n", ["quōquō"]);
-            setNominalForm(data.forms, "abl_pl_m", ["quibusquibus", "quīsquīs"]);
-            setNominalForm(data.forms, "abl_pl_f", ["quibusquibus", "quīsquīs"]);
-            setNominalForm(data.forms, "abl_pl_n", ["quibusquibus", "quīsquīs"]);
 
             setNominalForm(data.forms, "voc_sg_m", ["quisquis"]);
             setNominalForm(data.forms, "voc_sg_f", ["quisquis"]);
-            setNominalForm(data.forms, "voc_sg_n", ["quidquid", "quicquid"]);
             setNominalForm(data.forms, "voc_pl_m", ["quīquī"]);
             setNominalForm(data.forms, "voc_pl_f", ["quaequae"]);
             setNominalForm(data.forms, "voc_pl_n", ["quaequae"]);
