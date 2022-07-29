@@ -2,13 +2,14 @@
   "name": "@fpw/en-wiktionary-la-modules",
   "author": "Folke Will",
   "license": "CC-BY-SA-3.0",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Reimplementation of some Latin modules of en.wikipedia.org, especially inflections",
   "repository": {
     "type": "git",
     "url": "https://github.com/fpw/en-wiktionary-la-modules"
   },
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "src"
