@@ -1,6 +1,6 @@
 import { parse_template } from "./modules/common";
 import { ConjOptions, Conjugation, LaVerb } from "./modules/conjugation/LaVerb";
-import { NounData, LaNominal, AdjectiveData } from "./modules/declination/LaNominal";
+import { NounData, LaNominal, AdjectiveData, DeclOptions } from "./modules/declination/LaNominal";
 import { LaPersonalPronoun, PersonalPronounData } from "./modules/declination/LaPersonalPronoun";
 import { Headword } from "./modules/headword/HeadWord";
 import { HeadwordParser } from "./modules/headword/HeadwordParser";
@@ -10,17 +10,18 @@ export type TemplateData = FormData | Headword;
 
 export interface EngineOptions {
     verbOptions?: ConjOptions;
+    nominalOptions?: DeclOptions;
 }
 
 export class LaEngine {
-    private conj = new LaVerb();
-    private nominal = new LaNominal();
+    private conj;
+    private nominal;
     private ppron = new LaPersonalPronoun();
     private headword: HeadwordParser;
 
     public constructor(options?: EngineOptions) {
         this.conj = new LaVerb(options?.verbOptions);
-        this.nominal = new LaNominal();
+        this.nominal = new LaNominal(options?.nominalOptions);
         this.headword = new HeadwordParser(this.nominal, this.conj);
     }
 
