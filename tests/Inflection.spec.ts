@@ -9,6 +9,7 @@ import { remove_html, remove_links } from "../src/modules/common";
 import { AdjectiveData, DeclensionData, DeclProp, NounData } from "../src/modules/declination/LaNominal";
 import { VerbAffix } from "../src/modules/conjugation/VerbAffix";
 import { VerbForm } from "../src/modules/conjugation/VerbForm";
+import { NominalForm } from "../src/modules/declination/NominalForm";
 
 interface TestVector {
     lemma: string;
@@ -44,6 +45,24 @@ describe("engine", () => {
                 console.log(`In ${line}:`);
                 throw e;
             }
+        }
+    });
+
+    it("should decline 3-P adjectives with correct ablative", () => {
+        const engine = new LaEngine({nominalOptions: {suppressAdjPtcForms: true}});
+        const data = engine.parse_word("{{la-adecl|neglegēns<3-P+>}}");
+        expect(data.templateType).to.equal("declension");
+        if (data.templateType == "declension") {
+            expect(data.forms.get(NominalForm.AblSgM)).to.deep.equal(["neglegentī"]);
+        }
+    });
+
+    it("should decline 3-P participles with correct ablative", () => {
+        const engine = new LaEngine({nominalOptions: {suppressAdjPtcForms: true}});
+        const data = engine.parse_word("{{la-adecl|neglegēns<3-P+.ptc>}}");
+        expect(data.templateType).to.equal("declension");
+        if (data.templateType == "declension") {
+            expect(data.forms.get(NominalForm.AblSgM)).to.deep.equal(["neglegente"]);
         }
     });
 

@@ -394,8 +394,13 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "abl_sg_n", [stem2 + "e", stem2 + "ī"]);
             data.notes.set("abl_sg_n2", "When used purely as an adjective.");
         } else {
-            setNominalForm(data.forms, "abl_sg_m", [stem2 + "ī"]);
-            setNominalForm(data.forms, "abl_sg_n", [stem2 + "ī"]);
+            if (data.types.has("ptc")) {
+                setNominalForm(data.forms, "abl_sg_m", [stem2 + "e"]);
+                setNominalForm(data.forms, "abl_sg_n", [stem2 + "e"]);
+            } else {
+                setNominalForm(data.forms, "abl_sg_m", [stem2 + "ī"]);
+                setNominalForm(data.forms, "abl_sg_n", [stem2 + "ī"]);
+            }
         }
 
         if (!data.declOpts.suppressNonNeuterIStemAccIs) {
