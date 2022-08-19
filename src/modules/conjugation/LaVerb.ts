@@ -43,6 +43,9 @@ export interface ConjOptions {
 
     // use short i in perfect infinitive of īre (iisse vs īsse)
     ireWithShortPerfInf?: boolean;
+
+    // make ēsse the infinitive of edō instead of edere
+    reorderEdere?: boolean;
 }
 
 export interface VerbData {
@@ -2011,7 +2014,7 @@ export class LaVerb {
             this.add_2_forms(data, "pres_actv_impr", prefix, "ēs", "ēste");
             this.add_23_forms(data, "futr_actv_impr", prefix, "ēstō", "ēstō", "ēstōte", []);
 
-            if (this.options.suppressPoet) {
+            if (this.options.reorderEdere) {
                 // switch order to make ēsse the lemma
                 setVerbForm(data.forms, "pres_actv_inf", [prefix + "ēsse", prefix + "edere"]);
             } else {
