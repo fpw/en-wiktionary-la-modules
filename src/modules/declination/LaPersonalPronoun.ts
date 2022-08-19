@@ -1,77 +1,90 @@
-import { FormMap } from "../common";
-
-export enum PPronForm {
-    NomSg1 = "nom_1s",
-    GenSg1 = "gen_1s",
-    DatSg1 = "dat_1s",
-    AccSg1 = "acc_1s",
-    AblSg1 = "abl_1s",
-
-    NomPl1 = "nom_1p",
-    GenPl1 = "gen_1p",
-    DatPl1 = "dat_1p",
-    AccPl1 = "acc_1p",
-    AblPl1 = "abl_1p",
-
-    NomSg2 = "nom_2s",
-    GenSg2 = "gen_2s",
-    DatSg2 = "dat_2s",
-    AccSg2 = "acc_2s",
-    AblSg2 = "abl_2s",
-
-    NomPl2 = "nom_2p",
-    GenPl2 = "gen_2p",
-    DatPl2 = "dat_2p",
-    AccPl2 = "acc_2p",
-    AblPl2 = "abl_2p",
-
-    GenRef = "gen_ref",
-    DatRef = "dat_ref",
-    AccRef = "acc_ref",
-    AblRef = "abl_ref",
-}
+import { ArgMap, FormMap } from "../common";
+import { NumberTantum } from "./LaNominal";
+import { NominalForm } from "./NominalForm";
 
 export interface PersonalPronounData {
     templateType: "ppron";
-    forms: FormMap<PPronForm>;
+    forms: FormMap<NominalForm>;
+    pers: 1 | 2 | 3;
+    num: NumberTantum;
 }
 
 export class LaPersonalPronoun {
-    public make_data(): PersonalPronounData {
-        const forms = new Map<PPronForm, string[]>([
-            [PPronForm.NomSg1, ["ego"]],
-            [PPronForm.AccSg1, ["mē"]],
-            [PPronForm.GenSg1, ["meī"]],
-            [PPronForm.DatSg1, ["mihi"]],
-            [PPronForm.AblSg1, ["mē"]],
+    public make_data(args: ArgMap): PersonalPronounData {
+        const lemma = args.get("1");
+        let forms: Map<NominalForm, string[]>;
+        let num: NumberTantum;
+        let pers: 1 | 2 | 3;
 
-            [PPronForm.NomPl1, ["nōs"]],
-            [PPronForm.AccPl1, ["nōs"]],
-            [PPronForm.GenPl1, ["nostrum", "nostrī"]],
-            [PPronForm.DatPl1, ["nōbīs"]],
-            [PPronForm.AblPl1, ["nōbīs"]],
+        switch (lemma) {
+            case "ego":
+                forms = new Map<NominalForm, string[]>([
+                    [NominalForm.NomSg, ["ego"]],
+                    [NominalForm.AccSg, ["mē"]],
+                    [NominalForm.GenSg, ["meī"]],
+                    [NominalForm.DatSg, ["mihi"]],
+                    [NominalForm.AblSg, ["mē"]],
+                ]);
+                pers = 1;
+                num = NumberTantum.Singular;
+                break;
+            case "nōs":
+                forms = new Map<NominalForm, string[]>([
+                    [NominalForm.NomPl, ["nōs"]],
+                    [NominalForm.AccPl, ["nōs"]],
+                    [NominalForm.GenPl, ["nostrum", "nostrī"]],
+                    [NominalForm.DatPl, ["nōbīs"]],
+                    [NominalForm.AblPl, ["nōbīs"]],
+                ]);
+                pers = 1;
+                num = NumberTantum.Plural;
+                break;
+            case "tū":
+                forms = new Map<NominalForm, string[]>([
+                    [NominalForm.NomSg, ["tū"]],
+                    [NominalForm.AccSg, ["tē"]],
+                    [NominalForm.GenSg, ["tuī"]],
+                    [NominalForm.DatSg, ["tibi", "tibī"]],
+                    [NominalForm.AblSg, ["tē"]],
+                ]);
+                pers = 2;
+                num = NumberTantum.Singular;
+                break;
+            case "vōs":
+                forms = new Map<NominalForm, string[]>([
+                    [NominalForm.NomPl, ["vōs"]],
+                    [NominalForm.AccPl, ["vōs"]],
+                    [NominalForm.GenPl, ["vestrum", "vestrī"]],
+                    [NominalForm.DatPl, ["vōbīs"]],
+                    [NominalForm.AblPl, ["vōbīs"]],
+                ]);
+                pers = 2;
+                num = NumberTantum.Plural;
+                break;
+            case "sē":
+                forms = new Map<NominalForm, string[]>([
+                    [NominalForm.AccSg, ["sē", "sēsē"]],
+                    [NominalForm.GenSg, ["suī"]],
+                    [NominalForm.DatSg, ["sibi"]],
+                    [NominalForm.AblSg, ["sē", "sēsē"]],
 
-            [PPronForm.NomSg2, ["tū"]],
-            [PPronForm.AccSg2, ["tē"]],
-            [PPronForm.GenSg2, ["tuī"]],
-            [PPronForm.DatSg2, ["tibi", "tibī"]],
-            [PPronForm.AblSg2, ["tē"]],
-
-            [PPronForm.NomPl2, ["vōs"]],
-            [PPronForm.AccPl2, ["vōs"]],
-            [PPronForm.GenPl2, ["vestrum", "vestrī"]],
-            [PPronForm.DatPl2, ["vōbīs"]],
-            [PPronForm.AblPl2, ["vōbīs"]],
-
-            [PPronForm.AccRef, ["sē", "sēsē"]],
-            [PPronForm.GenRef, ["suī"]],
-            [PPronForm.DatRef, ["sibi"]],
-            [PPronForm.AblRef, ["sē", "sēsē"]],
-        ]);
+                    [NominalForm.AccPl, ["sē", "sēsē"]],
+                    [NominalForm.GenPl, ["suī"]],
+                    [NominalForm.DatPl, ["sibi"]],
+                    [NominalForm.AblPl, ["sē", "sēsē"]],
+                ]);
+                pers = 3;
+                num = NumberTantum.Both;
+                break;
+            default:
+                throw Error(`Unknown ppron lemma: ${lemma}`);
+        }
 
         return {
             templateType: "ppron",
-            forms: forms
+            forms: forms,
+            pers: pers,
+            num: num,
         };
     }
 }

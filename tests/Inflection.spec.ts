@@ -1,6 +1,3 @@
-import zlib = require("zlib");
-import readline = require("readline");
-import "mocha";
 import { createReadStream, existsSync } from "fs";
 import { expect } from "chai";
 import { LaEngine } from "../src/LaEngine";
@@ -10,16 +7,19 @@ import { AdjectiveData, DeclensionData, DeclProp, NounData } from "../src/module
 import { VerbAffix } from "../src/modules/conjugation/VerbAffix";
 import { VerbForm } from "../src/modules/conjugation/VerbForm";
 import { NominalForm } from "../src/modules/declination/NominalForm";
+import "mocha";
+import * as zlib from "zlib";
+import * as readline from "readline";
+
+interface DataEntry {
+    input: string;
+    output: any;
+}
 
 interface TestVector {
     lemma: string;
-    heads: InflectionData[];
-    inflections: InflectionData[];
-}
-
-interface InflectionData {
-    input: string;
-    output: any;
+    heads: DataEntry[];
+    inflections: DataEntry[];
 }
 
 describe("engine", () => {
@@ -112,7 +112,7 @@ function checkEntry(engine: LaEngine, entry: TestVector): void {
     }
 }
 
-function processTemplate(engine: LaEngine, inf: InflectionData, lemma: string) {
+function processTemplate(engine: LaEngine, inf: DataEntry, lemma: string) {
     const data = engine.parse_template(inf.input, lemma);
 
     switch (data.templateType) {

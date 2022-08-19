@@ -1,12 +1,11 @@
 import { parse_template } from "./modules/common";
-import { ConjOptions, Conjugation, LaVerb } from "./modules/conjugation/LaVerb";
+import { ConjOptions, VerbData, LaVerb } from "./modules/conjugation/LaVerb";
 import { NounData, LaNominal, AdjectiveData, DeclOptions } from "./modules/declination/LaNominal";
 import { LaPersonalPronoun, PersonalPronounData } from "./modules/declination/LaPersonalPronoun";
-import { Headword } from "./modules/headword/HeadWord";
+import { HeadwordData } from "./modules/headword/HeadWord";
 import { HeadwordParser } from "./modules/headword/HeadwordParser";
 
-export type FormData = NounData | AdjectiveData | Conjugation | PersonalPronounData;
-export type TemplateData = FormData | Headword;
+export type InflectionData = NounData | AdjectiveData | VerbData | PersonalPronounData;
 
 export interface EngineOptions {
     verbOptions?: ConjOptions;
@@ -44,16 +43,16 @@ export class LaEngine {
         return this.nominal.do_generate_adj_forms(args);
     }
 
-    public conjugate_verb(template: string): Conjugation {
+    public conjugate_verb(template: string): VerbData {
         const args = parse_template(template);
         return this.conj.make_data(args);
     }
 
-    public parse_headword(template: string, lemma: string): Headword {
+    public parse_headword(template: string, lemma: string): HeadwordData {
         return this.headword.parse(template, lemma);
     }
 
-    public parse_word(template: string): FormData {
+    public parse_word(template: string): InflectionData {
         const args = parse_template(template);
         const templateName = args.get("0") || "";
 
@@ -67,13 +66,13 @@ export class LaEngine {
             case "la-decl-gerund":
                 return this.decline_gerund(template);
             case "la-decl-ppron":
-                return this.ppron.make_data();
+                return this.ppron.make_data(args);
             default:
                 throw Error(`Unknown template ${templateName}`);
         }
     }
 
-    public parse_template(template: string, lemma: string): TemplateData {
+    public parse_template(template: string, lemma: string): InflectionData | HeadwordData {
         if (this.headword.isHeadwordTemplate(template)) {
             return this.headword.parse(template, lemma);
         } else {

@@ -1,7 +1,7 @@
-import { Conjugation } from "../conjugation/LaVerb";
+import { VerbData } from "../conjugation/LaVerb";
 import { AdjectiveData, NounData } from "../declination/LaNominal";
 
-export type Headword =
+export type HeadwordData =
      NominalHead | AdjectivalHead | PrepositionHead |
      ComparativeHead | SuperlativeHead |
      VerbalHead | ParticleHead | GerundHead |
@@ -60,7 +60,7 @@ export enum VerbalType {
 export interface VerbalHead extends BaseHead {
     headType: "verbal";
     partOfSpeech: VerbalType;
-    data: Conjugation;
+    data: VerbData;
     infinitives: string[];
 }
 

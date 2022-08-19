@@ -45,7 +45,7 @@ export interface ConjOptions {
     ireWithShortPerfInf?: boolean;
 }
 
-export interface Conjugation {
+export interface VerbData {
     templateType: "conjugation";
 
     info: ConjugationInfo;
@@ -151,7 +151,7 @@ export class LaVerb {
         this.setup_conjs();
     }
 
-    public make_data(args: ArgMap): Conjugation {
+    public make_data(args: ArgMap): VerbData {
         for (const slot of this.iter_slots(true, false)) {
             if (!args.has(slot)) {
                 args.set(slot, "");
@@ -2011,7 +2011,12 @@ export class LaVerb {
             this.add_2_forms(data, "pres_actv_impr", prefix, "ēs", "ēste");
             this.add_23_forms(data, "futr_actv_impr", prefix, "ēstō", "ēstō", "ēstōte", []);
 
-            this.add_form(data, "pres_actv_inf", prefix, "ēsse");
+            if (this.options.suppressPoet) {
+                // switch order to make ēsse the lemma
+                setVerbForm(data.forms, "pres_actv_inf", [prefix + "ēsse", prefix + "edere"]);
+            } else {
+                this.add_form(data, "pres_actv_inf", prefix, "ēsse");
+            }
         });
 
         this.irreg_conjugations.set("eo", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {

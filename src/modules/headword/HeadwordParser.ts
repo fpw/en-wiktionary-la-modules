@@ -16,11 +16,11 @@ import { LaVerb } from "../conjugation/LaVerb";
 import { getVerbForm } from "../conjugation/VerbForm";
 import { LaNominal } from "../declination/LaNominal";
 import { getNominalForm } from "../declination/NominalForm";
-import { AdjectivalType, AdverbType, Headword, NominalType, VerbalType } from "./HeadWord";
+import { AdjectivalType, AdverbType, HeadwordData, NominalType, VerbalType } from "./HeadWord";
 
 export type Args = Map<string, string>;
 
-type Parser = (args: Args, lemma: string) => Headword;
+type Parser = (args: Args, lemma: string) => HeadwordData;
 
 export class HeadwordParser {
     private templateParsers: Map<string, Parser> = new Map([
@@ -89,7 +89,7 @@ export class HeadwordParser {
         return this.templateParsers.has(templateName);
     }
 
-    public parse(template: string, lemma: string): Headword {
+    public parse(template: string, lemma: string): HeadwordData {
         const args = parse_template(template);
         const templateName = args.get("0") || "nil";
         const parseFunc = this.templateParsers.get(templateName);
@@ -111,7 +111,7 @@ export class HeadwordParser {
         }
     }
 
-    private parseNominalHead(args: Args, pos: NominalType): Headword {
+    private parseNominalHead(args: Args, pos: NominalType): HeadwordData {
         const overridePos = args.get("pos") || pos;
         const decl = this.nominal.do_generate_noun_forms(args, overridePos, true);
         const isNum = (pos == "numerals");
@@ -142,7 +142,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseAdjectivalHead(args: Args, pos: AdjectivalType): Headword {
+    private parseAdjectivalHead(args: Args, pos: AdjectivalType): HeadwordData {
         const overridePos = args.get("pos") || pos;
         const decl = this.nominal.do_generate_adj_forms(args, overridePos, true);
 
@@ -165,7 +165,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseVerbalHead(args: Args, pos: VerbalType): Headword {
+    private parseVerbalHead(args: Args, pos: VerbalType): HeadwordData {
         const conj = this.conj.make_data(args);
 
         let lemma_forms = conj.data.overriding_lemma;
@@ -185,7 +185,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseGerund(args: Args): Headword {
+    private parseGerund(args: Args): HeadwordData {
         const gerund = args.get("1") || "";
         const match = gerund.match(/^(.*)um$/);
         if (!match) {
@@ -209,7 +209,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseComparativeAdj(args: Args, lemma: string): Headword {
+    private parseComparativeAdj(args: Args, lemma: string): HeadwordData {
         const a1 = args.get("1");
         const a2 = args.get("2");
         const is_lemma = args.get("is_lemma");
@@ -249,7 +249,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseSuperlativeAdj(args: Args, lemma: string): Headword {
+    private parseSuperlativeAdj(args: Args, lemma: string): HeadwordData {
         const a1 = args.get("1");
         const a2 = args.get("2");
         const is_lemma = args.get("is_lemma");
@@ -293,7 +293,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseAdverb(args: Args, pos: AdverbType): Headword {
+    private parseAdverb(args: Args, pos: AdverbType): HeadwordData {
         const a1 = args.get("1");
         const a2 = args.get("2");
         const a3 = args.get("3");
@@ -365,7 +365,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseAdverbNumeral(args: Args): Headword {
+    private parseAdverbNumeral(args: Args): HeadwordData {
         const a1 = args.get("1") || "";
         const numType = args.get("type") || "";
 
@@ -377,7 +377,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseAdverbCompSup(args: Args, pos: AdverbType): Headword {
+    private parseAdverbCompSup(args: Args, pos: AdverbType): HeadwordData {
         const head = args.get("1");
         let heads: string[] | undefined;
         if (head) {
@@ -394,7 +394,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseLetter(args: Args, lemma: string): Headword {
+    private parseLetter(args: Args, lemma: string): HeadwordData {
         const upper = read_list(args, "upper");
         const lower = read_list(args, "lower");
         const mixed = read_list(args, "mixed");
@@ -416,7 +416,7 @@ export class HeadwordParser {
         };
     }
 
-    private parsePreposition(args: Args, lemma: string): Headword {
+    private parsePreposition(args: Args, lemma: string): HeadwordData {
         let genitive = false;
         let ablative = false;
         let accusative = false;
@@ -451,7 +451,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseInterjection(args: Args, lemma: string): Headword {
+    private parseInterjection(args: Args, lemma: string): HeadwordData {
         const head = args.get("head");
         let interj = head || args.get("1");
         if (!interj) {
@@ -465,7 +465,7 @@ export class HeadwordParser {
         };
     }
 
-    private parsePhrase(args: Args, lemma: string): Headword {
+    private parsePhrase(args: Args, lemma: string): HeadwordData {
         let phrase = args.get("1");
         if (!phrase) {
             phrase = lemma;
@@ -478,7 +478,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseHead(args: Args, lemma: string): Headword {
+    private parseHead(args: Args, lemma: string): HeadwordData {
         const pos = args.get("2");
         const heads = read_list(args, "head");
 
@@ -498,7 +498,7 @@ export class HeadwordParser {
         };
     }
 
-    private parseForm(args: Args, lemma: string, pos: string): Headword {
+    private parseForm(args: Args, lemma: string, pos: string): HeadwordData {
         let form = args.get("1");
         if (!form) {
             form = lemma;
