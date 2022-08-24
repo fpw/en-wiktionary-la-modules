@@ -30,10 +30,14 @@ export enum VerbType {
     NeuterPlural = "np",
     HighlyDefective = "highlydef",
     SigM = "sigm",
+    SigMPassive = "sigmpasv",
+    NoUND = "nound",
+    Suffix = "suffix",
 
     NoIStem = "-I",
     NoDeponent = "-depon",
     NoImpersonal = "-impers",
+    NoPerfAsPres = "-perfaspres",
 }
 
 export function addVerbType(types: Set<VerbType>, verbType: string) {

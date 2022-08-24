@@ -3,7 +3,7 @@
  * It was converted from Lua to TypeScript by Folke Will <folko@solhost.org>.
  *
  * Original source: https://en.wiktionary.org/wiki/Module:la-adj/data
- * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-adj/data&oldid=63799019
+ * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-adj/data&oldid=68705243
  *
  * Lua idioms, function and variable names kept as in the original in order to easily
  * backport later changes to this implementation.
@@ -14,6 +14,7 @@
  */
 import { NumberTantum, SegmentData } from "./LaNominal";
 import { setNominalForm } from "./NominalForm";
+import { NominalType } from "./NominalType";
 
 export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => void)> = new Map([
     ["0", (data, args) => {
@@ -56,7 +57,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
         let stem = args[0];
         let original: string | undefined;
 
-        if (data.types.has("er")) {
+        if (data.types.has(NominalType.Er)) {
             if (stem.match(/er$/)) {
                 data.subtitles.push("nominative masculine singular in '-er'");
                 data.categories.push("Latin first and second declension " + data.pos + " with nominative masculine singular in -er");
@@ -77,10 +78,10 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
         let am = "am";
         let a_macron = "ā";
 
-        if (data.types.has("greekA") || data.types.has("greekE")) {
+        if (data.types.has(NominalType.GreekA) || data.types.has(NominalType.GreekE)) {
             data.subtitles.push("Greek-type");
             data.categories.push("Latin first and second declension " + data.pos + " with Greek declension");
-            if (data.types.has("greekA")) {
+            if (data.types.has(NominalType.GreekA)) {
                 us = "os";
                 um = "on";
                 am = "ān";
@@ -142,7 +143,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
         setNominalForm(data.forms, "loc_pl_f", [stem + "īs"]);
         setNominalForm(data.forms, "loc_pl_n", [stem + "īs"]);
 
-        if (data.types.has("ius")) {
+        if (data.types.has(NominalType.Ius)) {
             data.subtitles.push("pronominal");
             data.categories.push("Latin first and second declension " + data.pos + " with genitive singular in -ī̆us");
             setNominalForm(data.forms, "gen_sg_m", [stem + "ī̆us"]);
@@ -151,7 +152,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "dat_sg_m", [stem + "ī"]);
             setNominalForm(data.forms, "dat_sg_f", [stem + "ī"]);
             setNominalForm(data.forms, "dat_sg_n", [stem + "ī"]);
-        } else if (data.types.has("not_ius")) {
+        } else if (data.types.has(NominalType.NotIus)) {
             data.subtitles.push("non-pronominal");
         }
 
@@ -159,7 +160,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "voc_sg_m", ["mī"]);
         }
 
-        if (data.types.has("ic")) {
+        if (data.types.has(NominalType.Ic)) {
             data.subtitles.push("'hic'-type");
             let oc = "oc";
             let oc_macron = "ōc";
@@ -201,6 +202,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
         const stem = args[0];
         setNominalForm(data.forms, "nom_sg_m", [stem + "a"]);
         setNominalForm(data.forms, "nom_pl_m", [stem + "ae"]);
+        setNominalForm(data.forms, "nom_pl_n", [stem + "a"]);
 
         setNominalForm(data.forms, "gen_sg_m", [stem + "ae"]);
         setNominalForm(data.forms, "gen_pl_m", [stem + "ārum"]);
@@ -211,7 +213,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
         setNominalForm(data.forms, "acc_sg_m", [stem + "am"]);
         setNominalForm(data.forms, "acc_sg_n", [stem + "a"]);
         setNominalForm(data.forms, "acc_pl_m", [stem + "ās"]);
-        setNominalForm(data.forms, "acc_pl_n", [stem + "ae"]);
+        setNominalForm(data.forms, "acc_pl_n", [stem + "a"]);
 
         setNominalForm(data.forms, "abl_sg_m", [stem + "ā"]);
         setNominalForm(data.forms, "abl_pl_m", [stem + "īs"]);
@@ -234,7 +236,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
         let um = "um";
         let i_pl = "ī";
 
-        if (data.types.has("greek")) {
+        if (data.types.has(NominalType.greek)) {
             data.subtitles.push("Greek-type");
             data.categories.push("Latin second declension " + data.pos + " with Greek declension");
             us = "os";
@@ -325,7 +327,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
         setNominalForm(data.forms, "voc_pl_m", [stem2 + "ēs"]);
         setNominalForm(data.forms, "voc_pl_n", [stem2 + "ia"]);
 
-        if (data.types.has("par")) {
+        if (data.types.has(NominalType.Par)) {
             data.subtitles.push("non-i-stem");
 
             setNominalForm(data.forms, "nom_pl_n", [stem2 + "a"]);
@@ -337,13 +339,13 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "loc_sg_n", [stem2 + "ī", stem2 + "e"]);
             setNominalForm(data.forms, "acc_pl_n", [stem2 + "a"]);
             setNominalForm(data.forms, "voc_pl_n", [stem2 + "a"]);
-        } else if (data.types.has("not_par")) {
+        } else if (data.types.has(NominalType.NotPar)) {
             data.subtitles.push("i-stem");
         }
 
         const es_base = stem1.match(/^(.*)ēs$/);
         if (es_base && es_base[1] == stem2) {
-            if (data.types.has("greek")) {
+            if (data.types.has(NominalType.greek)) {
                 const note = "It is unknown if Classical Latin preserved (or would have preserved) the shortness of the original Greek short ending.";
                 setNominalForm(data.forms, "nom_sg_n", [stem2 + "es", stem2 + "ēs"]);
                 data.notes.set("nom_sg_n1", note);
@@ -354,7 +356,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
                 setNominalForm(data.forms, "voc_sg_n", [stem2 + "es", stem2 + "ēs"]);
                 data.notes.set("voc_sg_n1", note);
                 data.subtitles.push("Greek-type");
-            } else if (data.types.has("not_greek")) {
+            } else if (data.types.has(NominalType.Notgreek)) {
                 data.subtitles.push("non-Greek-type");
             }
         }
@@ -364,7 +366,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
     }],
     ["3-C", (data, args) => {
         const stem = args[0];
-        data.types.add("par");
+        data.types.add(NominalType.Par);
         const d = m_adj_decl.get("3-1");
         if (!d) {
             throw Error("Decl 3-1 not ready");
@@ -394,7 +396,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "abl_sg_n", [stem2 + "e", stem2 + "ī"]);
             data.notes.set("abl_sg_n2", "When used purely as an adjective.");
         } else {
-            if (data.types.has("ptc")) {
+            if (data.types.has(NominalType.Participle)) {
                 setNominalForm(data.forms, "abl_sg_m", [stem2 + "e"]);
                 setNominalForm(data.forms, "abl_sg_n", [stem2 + "e"]);
             } else {
@@ -584,15 +586,36 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "nom_sg_f", ["illaec"]);
             setNominalForm(data.forms, "nom_sg_n", ["illuc", "illoc"]);
             setNominalForm(data.forms, "nom_pl_n", ["illaec"]);
+            setNominalForm(data.forms, "nom_pl_m", [""]);
+            setNominalForm(data.forms, "nom_pl_f", [""]);
 
-            setNominalForm(data.forms, "nom_sg_m", ["illunc"]);
-            setNominalForm(data.forms, "nom_sg_f", ["illanc"]);
-            setNominalForm(data.forms, "nom_sg_n", ["illuc", "illoc"]);
-            setNominalForm(data.forms, "nom_pl_n", ["illaec"]);
+            setNominalForm(data.forms, "gen_sg_m", [""]);
+            setNominalForm(data.forms, "gen_sg_f", [""]);
+            setNominalForm(data.forms, "gen_sg_n", [""]);
+            setNominalForm(data.forms, "gen_pl_m", [""]);
+            setNominalForm(data.forms, "gen_pl_f", [""]);
+            setNominalForm(data.forms, "gen_pl_n", [""]);
+
+            setNominalForm(data.forms, "dat_sg_m", [""]);
+            setNominalForm(data.forms, "dat_sg_f", [""]);
+            setNominalForm(data.forms, "dat_sg_n", [""]);
+            setNominalForm(data.forms, "dat_pl_m", [""]);
+            setNominalForm(data.forms, "dat_pl_f", [""]);
+            setNominalForm(data.forms, "dat_pl_n", [""]);
+
+            setNominalForm(data.forms, "acc_sg_m", ["illunc"]);
+            setNominalForm(data.forms, "acc_sg_f", ["illanc"]);
+            setNominalForm(data.forms, "acc_sg_n", ["illuc", "illoc"]);
+            setNominalForm(data.forms, "acc_pl_m", [""]);
+            setNominalForm(data.forms, "acc_pl_f", [""]);
+            setNominalForm(data.forms, "acc_pl_n", ["illaec"]);
 
             setNominalForm(data.forms, "abl_sg_m", ["illōc"]);
             setNominalForm(data.forms, "abl_sg_f", ["illāc"]);
             setNominalForm(data.forms, "abl_sg_n", ["illōc"]);
+            setNominalForm(data.forms, "abl_pl_m", [""]);
+            setNominalForm(data.forms, "abl_pl_f", [""]);
+            setNominalForm(data.forms, "abl_pl_n", [""]);
 
             data.voc = false;
 
@@ -720,7 +743,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
                 setNominalForm(data.forms, "acc_sg_n", ["i"]);
             }
         } else if (args[0] == "ille") {
-            data.types.add("ius");
+            data.types.add(NominalType.Ius);
             const d = m_adj_decl.get("1&2");
             if (!d) {
                 throw Error("Decl 1&2 not ready");
@@ -738,7 +761,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             data.voc = false;
             data.categories = [];
         } else if (args[0] == "iste") {
-            data.types.add("ius");
+            data.types.add(NominalType.Ius);
             const d = m_adj_decl.get("1&2");
             if (!d) {
                 throw Error("Decl 1&2 not ready");
@@ -757,7 +780,7 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
 
             data.categories = [];
         } else if (args[0] == "ipse") {
-            data.types.add("ius");
+            data.types.add(NominalType.Ius);
             const d = m_adj_decl.get("1&2");
             if (!d) {
                 throw Error("Decl 1&2 not ready");
@@ -783,8 +806,8 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
                 setNominalForm(data.forms, "acc_sg_f", ["quam"]);
                 setNominalForm(data.forms, "abl_sg_f", ["quā"]);
             } else {
-                setNominalForm(data.forms, "acc_sg_f", ["quem"]);
-                setNominalForm(data.forms, "abl_sg_f", ["quō"]);
+                setNominalForm(data.forms, "acc_sg_f", ["quem", "quam"]);
+                setNominalForm(data.forms, "abl_sg_f", ["quō", "quā"]);
             }
             data.title = "relative/interrogative pronoun";
 

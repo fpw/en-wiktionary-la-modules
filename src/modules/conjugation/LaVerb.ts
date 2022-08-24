@@ -5,7 +5,7 @@
  * A few new options to suppress certain rate forms were added.
  *
  * Original source: https://en.wiktionary.org/wiki/Module:la-verb
- * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-verb&oldid=63102127
+ * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-verb&oldid=67964189
  *
  * Lua idioms, function and variable names kept as in the original in order to easily
  * backport later changes to this implementation.
@@ -135,6 +135,7 @@ export class LaVerb {
         "np",
         "highlydef",
         "sigm",
+        "sigmpasv",
     ]);
 
     private static potential_lemma_slots = [
@@ -264,6 +265,7 @@ export class LaVerb {
         this.override(data, args);
         this.set_linked_forms(data, typeinfo);
         this.add_prefix_suffix(data);
+        this.notes_override(data, args);
 
         return {
             templateType: "conjugation",
@@ -349,6 +351,72 @@ export class LaVerb {
             }
             this.make_pres_3rd(data, typeinfo, typeinfo.pres_stem);
             this.make_perf_and_supine(data, typeinfo);
+
+            if (typeinfo.pres_stem.match(/nōsc/)) {
+                const sub = (str: string, x: number, y: number) => {
+                    return str.substring(x - 1, str.length + y + 1);
+                };
+                this.add_form(data, "2s_perf_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "stī", 2);
+                this.add_form(data, "1p_perf_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "mus", 2);
+                this.add_form(data, "2p_perf_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "stis", 2);
+                this.add_form(data, "3p_perf_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "runt", 3);
+                this.add_form(data, "1s_plup_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "ram", 2);
+                this.add_form(data, "2s_plup_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "rās", 2);
+                this.add_form(data, "3s_plup_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "rat", 2);
+                this.add_form(data, "1p_plup_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "rāmus", 2);
+                this.add_form(data, "2p_plup_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "rātis", 2);
+                this.add_form(data, "3p_plup_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "rant", 2);
+                this.add_form(data, "1s_futp_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "rō", 2);
+                this.add_form(data, "2s_futp_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "ris", 2);
+                this.add_form(data, "3s_futp_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "rit", 2);
+                this.add_form(data, "1p_futp_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "rimus", 2);
+                this.add_form(data, "2p_futp_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "ritis", 2);
+                this.add_form(data, "3p_futp_actv_indc", "", sub(typeinfo.perf_stem[0], 1, -2) + "rint", 2);
+                this.add_form(data, "1s_perf_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "rim", 2);
+                this.add_form(data, "2s_perf_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "rīs", 2);
+                this.add_form(data, "3s_perf_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "rit", 2);
+                this.add_form(data, "1p_perf_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "rīmus", 2);
+                this.add_form(data, "2p_perf_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "rītis", 2);
+                this.add_form(data, "3p_perf_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "rint", 2);
+                this.add_form(data, "1s_plup_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "ssem", 2);
+                this.add_form(data, "2s_plup_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "ssēs", 2);
+                this.add_form(data, "3s_plup_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "sset", 2);
+                this.add_form(data, "1p_plup_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "ssēmus", 2);
+                this.add_form(data, "2p_plup_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "ssētis", 2);
+                this.add_form(data, "3p_plup_actv_subj", "", sub(typeinfo.perf_stem[0], 1, -2) + "ssent", 2);
+                this.add_form(data, "perf_actv_inf", "", sub(typeinfo.perf_stem[0], 1, -2) + "sse", 2);
+
+                const note = "The verb \"nōscō\" and its compounds frequently drop the syllables \"vi\" and \"ve\" from their perfect, pluperfect and future perfect conjugations.";
+                data.footnotes.set("2s_perf_actv_indc", [note]);
+                data.footnotes.set("1p_perf_actv_indc", [note]);
+                data.footnotes.set("2p_perf_actv_indc", [note]);
+                data.footnotes.set("3p_perf_actv_indc", [note]);
+                data.footnotes.set("1s_plup_actv_indc", [note]);
+                data.footnotes.set("2s_plup_actv_indc", [note]);
+                data.footnotes.set("3s_plup_actv_indc", [note]);
+                data.footnotes.set("1p_plup_actv_indc", [note]);
+                data.footnotes.set("2p_plup_actv_indc", [note]);
+                data.footnotes.set("3p_plup_actv_indc", [note]);
+                data.footnotes.set("1s_futp_actv_indc", [note]);
+                data.footnotes.set("2s_futp_actv_indc", [note]);
+                data.footnotes.set("3s_futp_actv_indc", [note]);
+                data.footnotes.set("1p_futp_actv_indc", [note]);
+                data.footnotes.set("2p_futp_actv_indc", [note]);
+                data.footnotes.set("3p_futp_actv_indc", [note]);
+                data.footnotes.set("1s_perf_actv_subj", [note]);
+                data.footnotes.set("2s_perf_actv_subj", [note]);
+                data.footnotes.set("3s_perf_actv_subj", [note]);
+                data.footnotes.set("1p_perf_actv_subj", [note]);
+                data.footnotes.set("2p_perf_actv_subj", [note]);
+                data.footnotes.set("3p_perf_actv_subj", [note]);
+                data.footnotes.set("1s_plup_actv_subj", [note]);
+                data.footnotes.set("2s_plup_actv_subj", [note]);
+                data.footnotes.set("3s_plup_actv_subj", [note]);
+                data.footnotes.set("1p_plup_actv_subj", [note]);
+                data.footnotes.set("2p_plup_actv_subj", [note]);
+                data.footnotes.set("3p_plup_actv_subj", [note]);
+                data.footnotes.set("perf_actv_inf", [note]);
+            }
         });
 
         this.conjugations.set("3rd-io", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
@@ -605,6 +673,10 @@ export class LaVerb {
             }
         }
 
+        if (orig_lemma.startsWith("-")) {
+            addVerbType(subtypes, "suffix");
+        }
+
         let conjtype: ConjType;
         let base = "";
         let auto_perf = "";
@@ -617,11 +689,20 @@ export class LaVerb {
                 ["ō", []],
                 ["or", ["depon"]],
                 ["at", ["impers"]],
-                ["ātur", ["depon", "impers"]]
+                ["ātur", ["depon", "impers"]],
+                ["ī", ["perfaspres"]]
             ]));
             if (auto_perf_supine) {
-                auto_perf = base + "āv";
-                auto_supine = base + "āt";
+                if (hasVerbType(subtypes, "perfaspres")) {
+                    auto_perf = base;
+                } else {
+                    auto_perf = base + "āv";
+                    auto_supine = base + "āt";
+                }
+                if (hasVerbType(subtypes, "suffix")) {
+                    addVerbType(subtypes, "p3inf");
+                    addVerbType(subtypes, "sigmpasv");
+                }
             }
         } else if (conj_arg == "2") {
             conjtype = "2nd";
@@ -629,11 +710,19 @@ export class LaVerb {
                 ["eō", []],
                 ["eor", ["depon"]],
                 ["et", ["impers"]],
-                ["ētur", ["depon", "impers"]]
+                ["ētur", ["depon", "impers"]],
+                ["ī", ["perfaspres"]]
             ]));
             if (auto_perf_supine) {
-                auto_perf = base + "u";
-                auto_supine = base + "it";
+                if (hasVerbType(subtypes, "perfaspres")) {
+                    auto_perf = base;
+                } else {
+                    auto_perf = base + "u";
+                    auto_supine = base + "it";
+                }
+            }
+            if (hasVerbType(subtypes, "suffix")) {
+                addVerbType(subtypes, "sigmpasv");
             }
         } else if (conj_arg == "3") {
             [base, detected_subtypes] = this.get_subtype_by_ending(lemma, "", subtypes, new Map([
@@ -647,7 +736,8 @@ export class LaVerb {
                     ["ō", []],
                     ["or", ["depon"]],
                     ["it", ["impers"]],
-                    ["itur", ["depon", "impers"]]
+                    ["itur", ["depon", "impers"]],
+                    ["ī", ["perfaspres"]],
                 ]));
                 if (hasVerbType(subtypes, "I")) {
                     conjtype = "3rd-io";
@@ -655,25 +745,35 @@ export class LaVerb {
                     conjtype = "3rd";
                 }
             }
+            if (hasVerbType(subtypes, "perfaspres")) {
+                auto_perf = base;
+            }
+            if (hasVerbType(subtypes, "suffix")) {
+                auto_perf = "-";
+                auto_supine = "-";
+                addVerbType(subtypes, "sigmpasv");
+            }
         } else if (conj_arg == "4") {
             conjtype = "4th";
             [base, detected_subtypes] = this.get_subtype_by_ending(lemma, "4", subtypes, new Map([
                 ["iō", []],
                 ["ior", ["depon"]],
                 ["it", ["impers"]],
-                ["ītur", ["depon", "impers"]]
+                ["ītur", ["depon", "impers"]],
+                ["ī", ["perfaspres"]]
             ]));
 
-            if (auto_perf_supine == "++" && this.options.suppressIPerfect) {
-                auto_perf_supine = "+";
-            }
-
-            if (auto_perf_supine == "++") {
+            if (hasVerbType(subtypes, "perfaspres")) {
+                auto_perf = base;
+            } else if (auto_perf_supine == "++") {
                 auto_perf = base + "īv/" + base + "i";
                 auto_supine = base + "īt";
             } else if (auto_perf_supine == "+") {
                 auto_perf = base + "īv";
                 auto_supine = base + "īt";
+            }
+            if (hasVerbType(subtypes, "suffix")) {
+                addVerbType(subtypes, "sigm");
             }
         } else if (conj_arg == "irreg") {
             let prefix: string;
@@ -725,27 +825,29 @@ export class LaVerb {
             args.set("1", base);
             let perf_stem = "";
             let supine_stem = "";
-            if (hasVerbType(subtypes, "depon") || hasVerbType(subtypes, "semidepon")) {
+            if (hasVerbType(subtypes, "depon") || hasVerbType(subtypes, "semidepon") || hasVerbType(subtypes, "perfaspres")) {
                 supine_stem = args.get("3") || auto_supine;
-                if (supine_stem == "-") {
+                if (supine_stem == "-" && !hasVerbType(subtypes, "suffix")) {
                     supine_stem = "";
                 }
                 if (!supine_stem) {
-                    addVerbType(subtypes, "noperf");
+                    if (hasVerbType(subtypes, "depon") || hasVerbType(subtypes, "semidepon")) {
+                        addVerbType(subtypes, "noperf");
+                    }
                     addVerbType(subtypes, "nosup");
                 }
                 args.set("2", supine_stem);
                 args.delete("3");
             } else {
                 perf_stem = args.get("3") || auto_perf;
-                if (perf_stem == "-") {
+                if (perf_stem == "-" && !hasVerbType(subtypes, "suffix")) {
                     perf_stem = "";
                 }
                 if (!perf_stem) {
                     addVerbType(subtypes, "noperf");
                 }
                 supine_stem = args.get("4") || auto_supine;
-                if (supine_stem == "-") {
+                if (supine_stem == "-" && !hasVerbType(subtypes, "suffix")) {
                     supine_stem = "";
                 }
                 if (!supine_stem) {
@@ -766,7 +868,7 @@ export class LaVerb {
 
         for (const subtype of subtypes) {
             if (!this.allowed_subtypes.has(subtype)) {
-                if (!(conjtype == "3rd" && subtype == "-I") && !(conjtype == "3rd-io" && subtype == "I")) {
+                if (!(conjtype == "3rd" && subtype == "-I") && !(conjtype == "3rd-io" && subtype == "I") && !(subtype == "suffix")) {
                     throw Error(`Unrecognized verb subtype: ${subtype}`);
                 }
             }
@@ -818,18 +920,21 @@ export class LaVerb {
             pres_stem = this.ine(args.get("1"));
             supine_stem = this.ine(args.get("2"));
             perf_stem = this.ine(args.get("3")); // added by @fpw for reverti
+        } else if (hasVerbType(typeinfo.subtypes, "perfaspres")) {
+            perf_stem = this.ine(args.get("1"));
+            supine_stem = this.ine(args.get("2"));
         } else {
             pres_stem = this.ine(args.get("1"));
             perf_stem = this.ine(args.get("2"));
             supine_stem = this.ine(args.get("3"));
         }
 
-        if (hasVerbType(typeinfo.subtypes, "perfaspres") && !pres_stem) {
-            pres_stem = "whatever";
-        }
-
         if (!pres_stem) {
-            throw Error("Present stem has not been provided");
+            if (hasVerbType(typeinfo.subtypes, "perfaspres")) {
+                pres_stem = "-";
+            } else {
+                throw Error("No present stem");
+            }
         }
 
         typeinfo.pres_stem = pres_stem;
@@ -1294,7 +1399,7 @@ export class LaVerb {
         endingMap.set("acc", endings.acc);
         endingMap.set("abl", endings.abl);
 
-        if (base.match(/[uv]end$/)) {
+        if (base.match(/[uv]end$/) || hasVerbType(typeinfo.subtypes, "nound")) {
             und_variant = false;
         }
 
@@ -1440,6 +1545,7 @@ export class LaVerb {
         if (hasVerbType(typeinfo.subtypes, "perfaspres")) {
             this.insert_if_not(data.categories, "Latin defective verbs");
             this.insert_if_not(data.categories, "Latin active-only verbs");
+            this.insert_if_not(data.categories, "Latin verbs with missing present stem");
             this.insert_if_not(data.categories, "Latin verbs with perfect forms having imperfective meanings");
 
             setVerbForm(data.forms, "perf_actv_ptc", getVerbForm(data.forms, "perf_pasv_ptc") || []);
@@ -1625,14 +1731,41 @@ export class LaVerb {
                 newvals.push(fv.replace(/^(.*).$/, "$1" + "ier"));
             }
             setVerbForm(data.forms, form, newvals);
-            data.footnotes.set(form, ["The present passive infinitive in -ier is a rare poetic form which is attested for this verb."]);
+            data.footnotes.set(form, ["The present passive infinitive in -ier is a rare poetic form which is attested."]);
         }
 
         if (hasVerbType(typeinfo.subtypes, "poetsyncperf") && !this.options.suppressPoet) {
             const sss: [string, string][] = [
+                // infinitive
                 ["perf_actv_inf", "sse"],
+                // perfect actives
                 ["2s_perf_actv_indc", "stī"],
+                ["3s_perf_actv_indc", "t"],
+                ["1p_perf_actv_indc", "mus"],
                 ["2p_perf_actv_indc", "stis"],
+                ["3p_perf_actv_indc", "runt"],
+                // pluperfect actives
+                ["1s_plup_actv_indc", "ram"],
+                ["2s_plup_actv_indc", "rās"],
+                ["3s_plup_actv_indc", "rat"],
+                ["1p_plup_actv_indc", "rāmus"],
+                ["2p_plup_actv_indc", "rātis"],
+                ["3p_plup_actv_indc", "rant"],
+                // future perfect actives
+                ["1s_futp_actv_indc", "rō"],
+                ["2s_futp_actv_indc", "ris"],
+                ["3s_futp_actv_indc", "rit"],
+                ["1p_futp_actv_indc", "rimus"],
+                ["2p_futp_actv_indc", "ritis"],
+                ["3p_futp_actv_indc", "rint"],
+                // perfect subjunctives
+                ["1s_perf_actv_subj", "rim"],
+                ["2s_perf_actv_subj", "rīs"],
+                ["3s_perf_actv_subj", "rit"],
+                ["1p_perf_actv_subj", "rīmus"],
+                ["2p_perf_actv_subj", "rītis"],
+                ["3p_perf_actv_subj", "rint"],
+                // pluperfect subjunctive
                 ["1s_plup_actv_subj", "ssem"],
                 ["2s_plup_actv_subj", "ssēs"],
                 ["3s_plup_actv_subj", "sset"],
@@ -1644,10 +1777,12 @@ export class LaVerb {
             const add_sync_perf = (form: string, suff_sync: string) => {
                 const formval = getVerbForm(data.forms, form) || [];
                 for (const fv of formval) {
-                    const regex1 = new RegExp(`vi${suff_sync}$`);
-                    const regex2 = new RegExp(`[aeiouyāēīōūȳăĕĭŏŭ]ui${suff_sync}$`);
-                    if (fv.match(regex1) || fv.match(regex2)) {
-                        const rep = fv.substr(0, fv.length - suff_sync.length - 2) + suff_sync;
+                    const regex1 = new RegExp(`v[ieē]${suff_sync}$`);
+                    const regex2 = new RegExp(`vē${suff_sync}$`);
+                    const regex3 = new RegExp(`[aeiouyāēīōūȳăĕĭŏŭ]u[ieē]${suff_sync}$`);
+                    const regex4 = new RegExp(`[aeiouyāēīōūȳăĕĭŏŭ]uē${suff_sync}$`);
+                    if (fv.match(regex1) || fv.match(regex2) || fv.match(regex3) || fv.match(regex4)) {
+                        const rep = fv.substring(0, fv.length - suff_sync.length - 2) + suff_sync;
                         this.insert_if_not(formval, rep);
                     }
                 }
@@ -1692,13 +1827,13 @@ export class LaVerb {
     }
 
     private make_perfect_passive(data: ConjugationData) {
-        const ppp = getVerbForm(data.forms, "perf_pasv_ptc") || [];
+        let ppp: string[] | undefined = getVerbForm(data.forms, "perf_pasv_ptc") || [];
         const ppplinks: string[] = [];
         for (const pppform of ppp) {
             ppplinks.push(`[[${pppform}]]`);
         }
 
-        const ppplink = ppplinks.join(" or ");
+        let ppplink = ppplinks.join(" or ");
         const sumlink = "[[sum]]";
 
         const text_for_slot = new Map<string, string>([
@@ -1728,6 +1863,15 @@ export class LaVerb {
                             suffix_joiner +
                             (passiveSuffix || "");
             setVerbForm(data.forms, slot, [entry]);
+        }
+
+        ppp = getVerbForm(data.forms, "1s_pres_actv_indc");
+        if (ppp && ppp[0] == "faciō") {
+            ppplink = "[[factum]]";
+            for (const [slot, text] of text_for_slot) {
+                const ts = getVerbForm(data.forms, slot) ?? [];
+                setVerbForm(data.forms, slot, [ts[0] + " or " + ppplink + " + " + text + " of " + sumlink]);
+            }
         }
     }
 
@@ -1803,6 +1947,14 @@ export class LaVerb {
                     }
                     setVerbForm(data.forms, slot, affixed_forms);
                 }
+            }
+        }
+    }
+
+    private notes_override(data: ConjugationData, args: ArgMap) {
+        if (args.get("notes") == "-") {
+            for (const key of data.footnotes.keys()) {
+                data.footnotes.set(key, [""]);
             }
         }
     }
@@ -1941,6 +2093,17 @@ export class LaVerb {
             this.make_supine(data, typeinfo, [prefix + "dict"]);
 
             this.add_form(data, "2s_pres_actv_impr", prefix, "dīc", 1);
+
+            if (!this.options.suppressPoet) {
+                this.add_form(data, "2s_pres_actv_impr", prefix, "dīc", 1);
+                data.footnotes.set("2s_pres_actv_impr", ["Archaic."]);
+                if (prefix == "") {
+                    this.add_form(data, "1s_futr_actv_indc", prefix, "dīcēbō", 2);
+                    this.add_form(data, "3s_futr_actv_indc", prefix, "dīcēbit", 2);
+                    data.footnotes.set("1s_futr_actv_indc", ["Archaic."]);
+                    data.footnotes.set("3s_futr_actv_indc", ["Archaic."]);
+                }
+            }
         });
 
         this.irreg_conjugations.set("do", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
@@ -2347,6 +2510,7 @@ export class LaVerb {
 
         this.irreg_conjugations.set("coepi", (args: ArgMap, data: ConjugationData, typeinfo: ConjugationInfo) => {
             data.categories.push("Latin third conjugation verbs");
+            data.categories.push("Latin verbs with missing present stem");
             data.categories.push("Latin defective verbs");
 
             const prefix = typeinfo.prefix;
@@ -2398,6 +2562,11 @@ export class LaVerb {
             setVerbForm(data.forms, "1p_pres_actv_subj", [prefix_s + "sīmus"]);
             setVerbForm(data.forms, "2p_pres_actv_subj", [prefix_s + "sītis"]);
             setVerbForm(data.forms, "3p_pres_actv_subj", [prefix_s + "sint"]);
+
+            if (prefix_s == "ad" && !this.options.suppressPoet) {
+                this.add_form(data, "3p_pres_actv_subj", "", "adessint", 2);
+                data.footnotes.set("3p_pres_actv_subj", ["Archaic."]);
+            }
 
             setVerbForm(data.forms, "1s_impf_actv_subj", [prefix_e + "essem", prefix_f + "forem"]);
             setVerbForm(data.forms, "2s_impf_actv_subj", [prefix_e + "essēs", prefix_f + "forēs"]);

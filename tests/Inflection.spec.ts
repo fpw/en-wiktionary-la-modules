@@ -1,15 +1,16 @@
+import "mocha";
+import * as zlib from "zlib";
+import * as readline from "readline";
 import { createReadStream, existsSync } from "fs";
 import { expect } from "chai";
 import { LaEngine } from "../src/LaEngine";
-import { Conjugation, ConjugationData, ConjugationInfo } from "../src/modules/conjugation/LaVerb";
+import { VerbData, ConjugationData, ConjugationInfo } from "../src/modules/conjugation/LaVerb";
 import { remove_html, remove_links } from "../src/modules/common";
 import { AdjectiveData, DeclensionData, DeclProp, NounData } from "../src/modules/declination/LaNominal";
 import { VerbAffix } from "../src/modules/conjugation/VerbAffix";
 import { VerbForm } from "../src/modules/conjugation/VerbForm";
 import { NominalForm } from "../src/modules/declination/NominalForm";
-import "mocha";
-import * as zlib from "zlib";
-import * as readline from "readline";
+import { NominalType } from "../src/modules/declination/NominalType";
 
 interface DataEntry {
     input: string;
@@ -103,6 +104,11 @@ describe("engine", () => {
 });
 
 function checkEntry(engine: LaEngine, entry: TestVector): void {
+    if (entry.lemma == "Abdera") {
+        // broken entry in Wiktionary
+        return;
+    }
+
     for (const inf of entry.inflections) {
         processTemplate(engine, inf, entry.lemma);
     }
@@ -131,7 +137,7 @@ function processTemplate(engine: LaEngine, inf: DataEntry, lemma: string) {
     }
 }
 
-function processVerb(conj: Conjugation, luaData: any) {
+function processVerb(conj: VerbData, luaData: any) {
     const [data, info] = [conj.data, conj.info];
 
     compareVerbData(luaData.data, data);
@@ -288,7 +294,7 @@ function convertProps(luaData: any): DeclProp[] {
             luaProps.push({
                 decl: prop.decl,
                 headword_decl: prop.headword_decl,
-                types: new Set(Object.keys(prop.types))
+                types: new Set<NominalType>(Object.keys(prop.types) as NominalType[])
             });
         }
     }
@@ -334,7 +340,12 @@ function compareForms(jsEntry: Map<string, string[]>, luaEntry: Map<string, stri
 
         for (let i = 0; i < luaForms.length; i++) {
             const jsForm = remove_links(jsForms[i]);
-            const luaForm = remove_links(remove_html(luaForms[i].replace(/''/g, "'")));
+            let luaForm: string;
+            if (luaForms[i]) {
+                luaForm = remove_links(remove_html(luaForms[i].replace(/''/g, "'")));
+            } else {
+                luaForm = "";
+            }
             expect(luaForm).to.equal(jsForm);
         }
     }

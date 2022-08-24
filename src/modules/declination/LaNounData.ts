@@ -3,7 +3,7 @@
  * It was converted from Lua to TypeScript by Folke Will <folko@solhost.org>.
  *
  * Original source: https://en.wiktionary.org/wiki/Module:la-noun/data
- * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-noun/data&oldid=63744261
+ * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-noun/data&oldid=67964055
  *
  * Lua idioms, function and variable names kept as in the original in order to easily
  * backport later changes to this implementation.
@@ -15,6 +15,7 @@
 import { strip_macrons } from "../common";
 import { NumberTantum, SegmentData } from "./LaNominal";
 import { getNominalForm, setNominalForm } from "./NominalForm";
+import { hasNominalType, NominalType } from "./NominalType";
 
 export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => void)> = new Map([
     ["1", (data, args) => {
@@ -34,27 +35,27 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
         setNominalForm(data.forms, "abl_pl", [stem + "īs"]);
         setNominalForm(data.forms, "voc_pl", [stem + "ae"]);
 
-        if (data.types.has("abus")) {
+        if (data.types.has(NominalType.Abus)) {
             data.subtitles.push(["dative/ablative plural in ", "'-ābus'"]);
             setNominalForm(data.forms, "dat_pl", [stem + "ābus"]);
             setNominalForm(data.forms, "abl_pl", [stem + "ābus"]);
-        } else if (data.types.has("not_abus")) {
+        } else if (data.types.has(NominalType.NotAbus)) {
             data.subtitles.push(["dative/ablative plural in ", "'-īs'"]);
         }
 
-        if (data.types.has("am")) {
+        if (data.types.has(NominalType.Am)) {
             data.subtitles.push(["nominative/vocative singular in ", "'-ām'"]);
             setNominalForm(data.forms, "nom_sg", [stem + "ām"]);
             setNominalForm(data.forms, "acc_sg", [stem + "ām"]);
             setNominalForm(data.forms, "voc_sg", [stem + "ām"]);
             setNominalForm(data.forms, "abl_sg", [stem + "ām", stem + "ā"]);
-        } else if (data.types.has("Greek")) {
-            if (data.types.has("Ma")) {
+        } else if (data.types.has(NominalType.Greek)) {
+            if (data.types.has(NominalType.Ma)) {
                 data.subtitles.push("masculine Greek-type with nominative singular in '-ās'");
                 setNominalForm(data.forms, "nom_sg", [stem + "ās"]);
                 setNominalForm(data.forms, "acc_sg", [stem + "ān"]);
                 setNominalForm(data.forms, "voc_sg", [stem + "ā"]);
-            } else if (data.types.has("Me")) {
+            } else if (data.types.has(NominalType.Me)) {
                 data.subtitles.push("masculine Greek-type with nominative singular in '-ēs'");
                 setNominalForm(data.forms, "nom_sg", [stem + "ēs"]);
                 setNominalForm(data.forms, "acc_sg", [stem + "ēn"]);
@@ -68,9 +69,9 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 setNominalForm(data.forms, "abl_sg", [stem + "ē"]);
                 setNominalForm(data.forms, "voc_sg", [stem + "ē"]);
             }
-        } else if (data.types.has("not_Greek")) {
+        } else if (data.types.has(NominalType.NotGreek)) {
             data.subtitles.push("non-Greek-type");
-        } else if (data.types.has("not_am")) {
+        } else if (data.types.has(NominalType.NotAm)) {
             data.subtitles.push(["nominative/vocative singular in ", "'-a'"]);
         }
 
@@ -97,7 +98,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
         setNominalForm(data.forms, "abl_pl", [stem1 + "īs"]);
         setNominalForm(data.forms, "voc_pl", [stem1 + "ī"]);
 
-        if (data.types.has("N")) {
+        if (data.types.has(NominalType.Neuter)) {
             data.subtitles.push("neuter");
             setNominalForm(data.forms, "nom_sg", [stem1 + "um"]);
             setNominalForm(data.forms, "voc_sg", [stem1 + "um"]);
@@ -106,7 +107,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "acc_pl", [stem1 + "a"]);
             setNominalForm(data.forms, "voc_pl", [stem1 + "a"]);
 
-            if (data.types.has("ium")) {
+            if (data.types.has(NominalType.Ium)) {
                 setNominalForm(data.forms, "nom_sg", [stem1 + "ium"]);
                 if (!data.declOpts.suppressOldGenitive) {
                     setNominalForm(data.forms, "gen_sg", [stem1 + "iī", stem1 + "ī"]);
@@ -128,7 +129,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 if (!data.declOpts.suppressOldGenitive) {
                     data.notes.set("gen_sg2", "Found in older Latin (until the Augustan Age).");
                 }
-            } else if (data.types.has("a")) {
+            } else if (data.types.has(NominalType.a)) {
                 data.subtitles.push("nominative/accusative/vocative plural in '-a'");
 
                 setNominalForm(data.forms, "nom_sg", [stem1 + "us"]);
@@ -138,12 +139,12 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 setNominalForm(data.forms, "nom_pl", [stem1 + "a"]);
                 setNominalForm(data.forms, "acc_pl", [stem1 + "a"]);
                 setNominalForm(data.forms, "voc_pl", [stem1 + "a"]);
-            } else if (data.types.has("vom")) {
+            } else if (data.types.has(NominalType.Vom)) {
                 data.subtitles.push("nominative singular in '-om' after 'v'");
                 setNominalForm(data.forms, "nom_sg", [stem1 + "om"]);
                 setNominalForm(data.forms, "acc_sg", [stem1 + "om"]);
                 setNominalForm(data.forms, "voc_sg", [stem1 + "om"]);
-            } else if (data.types.has("Greek") && data.types.has("us")) {
+            } else if (data.types.has(NominalType.Greek) && data.types.has(NominalType.Us)) {
                 data.subtitles.push("Greek-type");
                 data.subtitles.push("nominative/accusative/vocative in '-os'");
 
@@ -155,12 +156,12 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 setNominalForm(data.forms, "gen_pl", [stem1 + "ōn"]);
                 setNominalForm(data.forms, "acc_pl", [stem1 + "ē"]);
                 setNominalForm(data.forms, "voc_pl", [stem1 + "ē"]);
-            } else if (data.types.has("Greek")) {
+            } else if (data.types.has(NominalType.Greek)) {
                 data.subtitles.push("Greek-type");
                 setNominalForm(data.forms, "nom_sg", [stem1 + "on"]);
                 setNominalForm(data.forms, "acc_sg", [stem1 + "on"]);
                 setNominalForm(data.forms, "voc_sg", [stem1 + "on"]);
-            } else if (data.types.has("us")) {
+            } else if (data.types.has(NominalType.Us)) {
                 data.subtitles.push("nominative/accusative/vocative in '-us'");
                 setNominalForm(data.forms, "nom_sg", [stem1 + "us"]);
                 setNominalForm(data.forms, "acc_sg", [stem1 + "us"]);
@@ -169,10 +170,10 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 setNominalForm(data.forms, "nom_pl", [stem1 + "ī"]);
                 setNominalForm(data.forms, "acc_pl", [stem1 + "ōs"]);
                 setNominalForm(data.forms, "voc_pl", [stem1 + "ī"]);
-            } else if (data.types.has("not_Greek") || data.types.has("not_us")) {
+            } else if (data.types.has(NominalType.NotGreek) || data.types.has(NominalType.NotUs)) {
                 data.subtitles.push("nominative/accusative/vocative in '-um'");
             }
-        } else if (data.types.has("er")) {
+        } else if (data.types.has(NominalType.Er)) {
             if (stem1.match(/[aiouy]r$/)) {
                 data.subtitles.push("nominative singular in '-r'");
             } else {
@@ -192,7 +193,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "acc_pl", [stem2 + "ōs"]);
             setNominalForm(data.forms, "abl_pl", [stem2 + "īs"]);
             setNominalForm(data.forms, "voc_pl", [stem2 + "ī"]);
-        } else if (data.types.has("ius")) {
+        } else if (data.types.has(NominalType.Ius)) {
             setNominalForm(data.forms, "nom_sg", [stem1 + "ius"]);
             if (!data.declOpts.suppressOldGenitive) {
                 setNominalForm(data.forms, "gen_sg", [stem1 + "iī", stem1 + "ī"]);
@@ -203,7 +204,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "acc_sg", [stem1 + "ium"]);
             setNominalForm(data.forms, "abl_sg", [stem1 + "iō"]);
 
-            if (data.types.has("voci")) {
+            if (data.types.has(NominalType.VocI)) {
                 setNominalForm(data.forms, "voc_sg", [stem1 + "ī"]);
             } else {
                 setNominalForm(data.forms, "voc_sg", [stem1 + "ie"]);
@@ -219,32 +220,32 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             if (!data.declOpts.suppressOldGenitive) {
                 data.notes.set("gen_sg2", "Found in older Latin (until the Augustan Age).");
             }
-        } else if (data.types.has("vos")) {
+        } else if (data.types.has(NominalType.Vos)) {
             data.subtitles.push("nominative singular in '-os' after 'v'");
             setNominalForm(data.forms, "nom_sg", [stem1 + "os"]);
             setNominalForm(data.forms, "acc_sg", [stem1 + "om"]);
-        } else if (data.types.has("Greek")) {
+        } else if (data.types.has(NominalType.Greek)) {
             data.subtitles.push("Greek-type");
             setNominalForm(data.forms, "nom_sg", [stem1 + "os"]);
             setNominalForm(data.forms, "acc_sg", [stem1 + "on"]);
-        } else if (data.types.has("not_Greek")) {
+        } else if (data.types.has(NominalType.NotGreek)) {
             data.subtitles.push("non-Greek-type");
         }
 
-        if (data.types.has("genplum")) {
+        if (data.types.has(NominalType.GenPluM)) {
             data.subtitles.push(["contracted", " genitive plural"]);
             data.notes.set("gen_pl2", "Contraction found in poetry.");
-            if (data.types.has("ius") || data.types.has("ium")) {
+            if (data.types.has(NominalType.Ius) || data.types.has(NominalType.Ium)) {
                 setNominalForm(data.forms, "gen_pl", [stem2 + "iōrum", stem2 + "ium"]);
             } else {
                 setNominalForm(data.forms, "gen_pl", [stem2 + "ōrum", stem2 + "um"]);
             }
-        } else if (data.types.has("not_genplum")) {
+        } else if (data.types.has(NominalType.NotGenPluM)) {
             data.subtitles.push(["normal", " genitive plural"]);
         }
 
         if (data.loc) {
-            if (data.types.has("ius") || data.types.has("ium")) {
+            if (data.types.has(NominalType.Ius) || data.types.has(NominalType.Ium)) {
                 setNominalForm(data.forms, "loc_sg", [stem2 + "iī"]);
                 setNominalForm(data.forms, "loc_pl", [stem2 + "iīs"]);
             } else {
@@ -292,7 +293,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
         }
 
         for (const [acc_sg_subtype, [endings, title]] of acc_sg_i_stem_subtypes) {
-            if (data.types.has("not_" + acc_sg_subtype)) {
+            if (hasNominalType(data.types, "not_" + acc_sg_subtype)) {
                 not_acc_sg_i_stem_subtype = true;
                 break;
             }
@@ -308,17 +309,17 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
         }
 
         for (const [abl_sg_subtype, [endings, title]] of abl_sg_i_stem_subtypes) {
-            if (data.types.has("not_" + abl_sg_subtype)) {
+            if (hasNominalType(data.types, "not_" + abl_sg_subtype)) {
                 not_abl_sg_i_stem_subtype = true;
                 break;
             }
         }
 
 
-        if (data.types.has("Greek")) {
+        if (data.types.has(NominalType.Greek)) {
             data.subtitles.push("Greek-type");
 
-            if (data.types.has("er")) {
+            if (data.types.has(NominalType.Er)) {
                 data.subtitles.push("variant with nominative singular in '-ēr'");
                 stem1 = extract_stem(stem1, "ēr");
 
@@ -335,7 +336,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 setNominalForm(data.forms, "acc_pl", [stem1 + "erēs"]);
                 setNominalForm(data.forms, "abl_pl", [stem1 + "eribus"]);
                 setNominalForm(data.forms, "voc_pl", [stem1 + "erēs"]);
-            } else if (data.types.has("on")) {
+            } else if (data.types.has(NominalType.On)) {
                 data.subtitles.push("variant with nominative singular in '-ōn'");
                 stem1 = extract_stem(stem1, "ōn");
 
@@ -352,7 +353,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 setNominalForm(data.forms, "acc_pl", [stem1 + "ontēs", stem1 + "ontās"]);
                 setNominalForm(data.forms, "abl_pl", [stem1 + "ontibus"]);
                 setNominalForm(data.forms, "voc_pl", [stem1 + "ontēs"]);
-            } else if (data.types.has("I")) {
+            } else if (data.types.has(NominalType.I)) {
                 data.subtitles.push("i-stem");
                 setNominalForm(data.forms, "gen_sg", [stem2 + "is", stem2 + "eōs", stem2 + "ios"]);
                 setNominalForm(data.forms, "acc_sg", [stem2 + "im", stem2 + "in", stem2 + "em"]);
@@ -367,7 +368,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 setNominalForm(data.forms, "acc_pl", [stem2 + "ēs", stem2 + "eis"]);
                 setNominalForm(data.forms, "voc_pl", [stem2 + "ēs", stem2 + "eis"]);
 
-                if (data.types.has("poetic_esi")) {
+                if (data.types.has(NominalType.poetic_esi)) {
                     setNominalForm(data.forms, "dat_pl", [stem2 + "ibus", stem2 + "esi"]);
                     setNominalForm(data.forms, "abl_pl", [stem2 + "ibus", stem2 + "esi"]);
                     data.notes.set("dat_pl2", "Primarily in poetry.");
@@ -391,11 +392,11 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                     data.notes.set("voc_sg2", "In poetry.");
                 }
             }
-        } else if (data.types.has("not_Greek")) {
+        } else if (data.types.has(NominalType.NotGreek)) {
             data.subtitles.push("non-Greek-type");
         }
 
-        if (data.types.has("polis")) {
+        if (data.types.has(NominalType.Polis)) {
             stem1 = extract_stem(stem1, "polis");
             data.subtitles.push("i-stem, partially Greek-type");
             setNominalForm(data.forms, "nom_sg", [stem1 + "polis"]);
@@ -404,17 +405,17 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "acc_sg", [stem1 + "polim", stem1 + "polin"]);
             setNominalForm(data.forms, "abl_sg", [stem1 + "polī"]);
             setNominalForm(data.forms, "voc_sg", [stem1 + "polis", stem1 + "polī"]);
-        } else if (data.types.has("not_polis")) {
+        } else if (data.types.has(NominalType.NotPolis)) {
             data.subtitles.push(non_i_stem_type());
         }
 
-        if (data.types.has("N")) {
+        if (data.types.has(NominalType.Neuter)) {
             data.subtitles.push("neuter");
 
             setNominalForm(data.forms, "acc_sg", [stem1]);
 
-            if (data.types.has("I")) {
-                if (data.types.has("pure")) {
+            if (data.types.has(NominalType.I)) {
+                if (data.types.has(NominalType.Pure)) {
                     data.subtitles.push("“pure” i-stem");
 
                     setNominalForm(data.forms, "abl_sg", [stem2 + "ī"]);
@@ -436,8 +437,8 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 setNominalForm(data.forms, "acc_pl", [stem2 + "a"]);
                 setNominalForm(data.forms, "voc_pl", [stem2 + "a"]);
             }
-        } else if (data.types.has("I") || acc_sg_i_stem_subtype || abl_sg_i_stem_subtype) {
-            if (data.types.has("not_N")) {
+        } else if (data.types.has(NominalType.I) || acc_sg_i_stem_subtype || abl_sg_i_stem_subtype) {
+            if (data.types.has(NominalType.NotNeuter)) {
                 data.subtitles.push("non-neuter i-stem");
             } else {
                 data.subtitles.push("i-stem");
@@ -477,11 +478,11 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                     break;
                 }
             }
-        } else if (data.types.has("not_N") && data.types.has("not_I")) {
+        } else if (data.types.has(NominalType.Neuter) && data.types.has(NominalType.NotI)) {
             data.subtitles.push("non-neuter " + non_i_stem_type());
-        } else if (data.types.has("not_N")) {
+        } else if (data.types.has(NominalType.NotNeuter)) {
             data.subtitles.push("non-neuter");
-        } else if (data.types.has("not_I")) {
+        } else if (data.types.has(NominalType.NotI)) {
             data.subtitles.push(non_i_stem_type());
         }
 
@@ -512,17 +513,17 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
         setNominalForm(data.forms, "abl_pl", [stem + "ibus"]);
         setNominalForm(data.forms, "voc_pl", [stem + "ūs"]);
 
-        if (data.types.has("echo")) {
+        if (data.types.has(NominalType.Echo)) {
             data.subtitles.push("nominative/vocative singular in '-ō'");
             setNominalForm(data.forms, "nom_sg", [stem + "ō"]);
             setNominalForm(data.forms, "voc_sg", [stem + "ō"]);
-        } else if (data.types.has("argo")) {
+        } else if (data.types.has(NominalType.argo)) {
             data.subtitles.push("nominative/accusative/vocative singular in '-ō', ablative singular in '-uī'");
             setNominalForm(data.forms, "nom_sg", [stem + "ō"]);
             setNominalForm(data.forms, "acc_sg", [stem + "ō"]);
             setNominalForm(data.forms, "abl_sg", [stem + "uī"]);
             setNominalForm(data.forms, "voc_sg", [stem + "ō"]);
-        } else if (data.types.has("Callisto")) {
+        } else if (data.types.has(NominalType.Callisto)) {
             data.subtitles.push("all cases except the genitive singular in '-ō'");
             setNominalForm(data.forms, "nom_sg", [stem + "ō"]);
             setNominalForm(data.forms, "dat_sg", [stem + "ō"]);
@@ -531,7 +532,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "voc_sg", [stem + "ō"]);
         }
 
-        if (data.types.has("N")) {
+        if (data.types.has(NominalType.Neuter)) {
             data.subtitles.push("neuter");
 
             setNominalForm(data.forms, "nom_sg", [stem + "ū"]);
@@ -544,12 +545,12 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
             setNominalForm(data.forms, "voc_pl", [stem + "ua"]);
         }
 
-        if (data.types.has("ubus")) {
+        if (data.types.has(NominalType.Ubus)) {
             data.subtitles.push("dative/ablative plural in '-ubus'");
 
             setNominalForm(data.forms, "dat_pl", [stem + "ubus"]);
             setNominalForm(data.forms, "abl_pl", [stem + "ubus"]);
-        } else if (data.types.has("not_ubus")) {
+        } else if (data.types.has(NominalType.NotUbus)) {
             data.subtitles.push("'-ibus'");
         }
 
@@ -562,7 +563,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
     ["5", (data, args) => {
         let stem = args[0];
 
-        if (data.types.has("i")) {
+        if (data.types.has(NominalType.i)) {
             stem = stem + "i";
         }
 
@@ -580,7 +581,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
         setNominalForm(data.forms, "abl_pl", [stem + "ēbus"]);
         setNominalForm(data.forms, "voc_pl", [stem + "ēs"]);
 
-        if (data.types.has("i")) {
+        if (data.types.has(NominalType.i)) {
             setNominalForm(data.forms, "gen_sg", [stem + "ēī"]);
             setNominalForm(data.forms, "dat_sg", [stem + "ēī"]);
         }
@@ -613,7 +614,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
         }
     }],
     ["indecl", (data, args) => {
-        data.title = "Not declined; used only in the nominative and accusative singular.";
+        data.title = "Not declined; used only in the nominative and accusative singular";
 
         const stem = args[0];
 
@@ -860,20 +861,20 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
     }],
 ]);
 
-const acc_sg_i_stem_subtypes = new Map<string, [string[], string]>([
-    ["acc_im",          [["im"],             "accusative singular in '-im'"]],
-    ["acc_im_in",       [["im", "in"],       "accusative singular in '-im' or '-in'"]],
-    ["acc_im_in_em",    [["im", "in", "em"], "accusative singular in '-im', '-in' or '-em'"]],
-    ["acc_im_em",       [["im", "em"],       "accusative singular in '-im' or '-em'"]],
-    ["acc_im_occ_em",   [["im", "em"],       "accusative singular in '-im' or occasionally '-em'"]],
-    ["acc_em_im",       [["em", "im"],       "accusative singular in '-em' or '-im'"]],
+const acc_sg_i_stem_subtypes = new Map<NominalType, [string[], string]>([
+    [NominalType.AccIm,         [["im"],             "accusative singular in '-im'"]],
+    [NominalType.AccImIn,       [["im", "in"],       "accusative singular in '-im' or '-in'"]],
+    [NominalType.AccImInEm,     [["im", "in", "em"], "accusative singular in '-im', '-in' or '-em'"]],
+    [NominalType.AccImEm,       [["im", "em"],       "accusative singular in '-im' or '-em'"]],
+    [NominalType.AccImOccEm,    [["im", "em"],       "accusative singular in '-im' or occasionally '-em'"]],
+    [NominalType.AccEmIm,       [["em", "im"],       "accusative singular in '-em' or '-im'"]],
 ]);
 
-const abl_sg_i_stem_subtypes = new Map<string, [string[], string]>([
-    ["abl_i",       [["ī"],      "ablative singular in '-ī'"]],
-    ["abl_i_e",     [["ī", "e"], "ablative singular in '-ī' or '-e'"]],
-    ["abl_e_i",     [["e", "ī"], "ablative singular in '-e' or '-ī'"]],
-    ["abl_e_occ_i", [["e", "ī"], "ablative singular in '-e' or occasionally '-ī'"]],
+const abl_sg_i_stem_subtypes = new Map<NominalType, [string[], string]>([
+    [NominalType.AblI,      [["ī"],      "ablative singular in '-ī'"]],
+    [NominalType.AblIE,     [["ī", "e"], "ablative singular in '-ī' or '-e'"]],
+    [NominalType.AblEI,     [["e", "ī"], "ablative singular in '-e' or '-ī'"]],
+    [NominalType.AblEOccI,  [["e", "ī"], "ablative singular in '-e' or occasionally '-ī'"]],
 ]);
 
 function extract_stem(form: string, ending: string): string {

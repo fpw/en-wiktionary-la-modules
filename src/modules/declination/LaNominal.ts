@@ -3,7 +3,7 @@
  * It was converted from Lua to TypeScript by Folke Will <folko@solhost.org>.
  *
  * Original source: https://en.wiktionary.org/wiki/Module:la-nominal
- * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-nominal&oldid=62391877
+ * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-nominal&oldid=68705587
  *
  * Lua idioms, function and variable names kept as in the original in order to easily
  * backport later changes to this implementation.
@@ -16,6 +16,7 @@ import { ArgMap, array_equals, extract_base, FormMap, is_enum_value, read_list, 
 import { m_adj_decl } from "./LaAdjData";
 import { m_noun_decl } from "./LaNounData";
 import { getNominalForm, NominalForm, setNominalForm } from "./NominalForm";
+import { addNominalType, delNominalType, hasNominalType, NominalType } from "./NominalType";
 
 export interface DeclOptions {
     suppressOldGenitive?: boolean;
@@ -44,6 +45,7 @@ interface SegmentRun {
     gender?: Gender;
     is_adj?: boolean;
     propses: DeclProp[];
+    apparent_decl?: string;
 }
 
 interface Segment {
@@ -56,7 +58,7 @@ interface Segment {
     orig_lemma: string;
     stem2?: string;
     gender?: Gender;
-    types: Set<string>;
+    types: Set<NominalType>;
     num?: NumberTantum;
     loc: boolean;
     args: string[];
@@ -78,7 +80,7 @@ interface Alternant {
 export interface DeclProp {
     decl: string;
     headword_decl: string;
-    types: Set<string>;
+    types: Set<NominalType>;
 }
 
 interface Declensions {
@@ -90,6 +92,7 @@ interface Declensions {
     categories: string[];
     voc: boolean;
     noneut: boolean;
+    nomf: boolean;
 }
 
 export interface DeclensionData {
@@ -126,6 +129,7 @@ export interface AdjectiveData extends DeclensionData {
 
     voc: boolean;
     noneut: boolean;
+    nomf: boolean;
 
     // only in headwords
     comp: string[];
@@ -142,7 +146,7 @@ export interface SegmentData {
     loc?: boolean;
     pos: string;
     forms: FormMap<NominalForm>;
-    types: Set<string>;
+    types: Set<NominalType>;
     categories: string[];
     notes: Map<string, string>;
 
@@ -150,12 +154,13 @@ export interface SegmentData {
     gender?: Gender;
     voc?: boolean;
     noneut?: boolean;
+    nomf?: boolean;
 }
 
 type EndingTable = [
     string | string[],
     string,
-    string[],
+    NominalType[],
     ((base: string, stem2: string) => [string, string])?
 ][];
 
@@ -331,6 +336,7 @@ export class LaNominal {
             user_specified: new Set(),
             voc: declensions.voc,
             noneut: args.has("noneut") || declensions.noneut,
+            nomf: args.has("nomf") || declensions.nomf,
             pos: pos,
             num_type: args.get("type"),
 
@@ -378,10 +384,13 @@ export class LaNominal {
             if (parsed_run.loc) {
                 post_text_parts.push(", with locative");
             }
-            if (parsed_run.num == "sg") {
-                post_text_parts.push(", singular only");
-            } else if (parsed_run.num == "pl") {
-                post_text_parts.push(", plural only");
+
+            if (parsed_run.apparent_decl == "indecl") {
+                if (parsed_run.num == "sg") {
+                    post_text_parts.push(", singular only");
+                } else if (parsed_run.num == "pl") {
+                    post_text_parts.push(", plural only");
+                }
             }
 
             const post_text = post_text_parts.join("");
@@ -439,6 +448,9 @@ export class LaNominal {
 
         for (const slot of this.iter_adj_slots()) {
             if (data.noneut && slot.match(/_n/)) {
+                setNominalForm(data.forms, slot, undefined);
+            }
+            if (data.nomf && (slot.match(/_m/) || slot.match(/_f/))) {
                 setNominalForm(data.forms, slot, undefined);
             }
             let val: string[] | undefined;
@@ -619,7 +631,7 @@ export class LaNominal {
             num: num,
             gender: gender,
             is_adj: is_adj,
-            propses: propses
+            propses: propses,
         };
     }
 
@@ -736,7 +748,7 @@ export class LaNominal {
             loc: loc,
             num: num,
             gender: gender,
-            propses: propses
+            propses: propses,
         };
     }
 
@@ -754,7 +766,7 @@ export class LaNominal {
         const stems = stem_part.split("/");
         const specs = spec_part.split(".");
 
-        const types = new Set<string>();
+        const types = new Set<NominalType>();
         let num: NumberTantum | undefined;
         let loc = false;
 
@@ -769,7 +781,9 @@ export class LaNominal {
                     const begins_with_hypen = m2[1];
                     spec = m2[2];
                     spec = begins_with_hypen + spec.replace(/-/g, "_");
-                    types.add(spec);
+                    if (spec) {
+                        addNominalType(types, spec);
+                    }
                 }
             }
         }
@@ -790,7 +804,7 @@ export class LaNominal {
 
         let headword_decl;
         let base;
-        let detected_subtypes;
+        let detected_subtypes: Set<NominalType>;
 
         if (decl.match(/\+/)) {
             decl = decl.replace(/\+/g, "");
@@ -805,8 +819,8 @@ export class LaNominal {
             }
 
             for (const subtype of detected_subtypes) {
-                if (types.has("-" + subtype)) {
-                    types.delete("-" + subtype);
+                if (hasNominalType(types, "-" + subtype)) {
+                    delNominalType(types, "-" + subtype);
                 } else {
                     types.add(subtype);
                 }
@@ -822,42 +836,48 @@ export class LaNominal {
             }
 
             for (const subtype of detected_subtypes) {
-                if (types.has("-" + subtype)) {
-                    types.delete("-" + subtype);
-                } else if ((subtype == "M" || subtype == "F" || subtype == "N") && (types.has("M") || types.has("F") || types.has("N"))) {
+                if (hasNominalType(types, "-" + subtype)) {
+                    delNominalType(types, "-" + subtype);
+                } else if (
+                    (subtype == NominalType.Masculine || subtype == NominalType.Feminine || subtype == NominalType.Neuter) &&
+                    (types.has(NominalType.Masculine) || types.has(NominalType.Feminine) || types.has(NominalType.Neuter))
+                ) {
                     // don't create conflicting gender specs
-                } else if ((subtype == "sg" || subtype == "pl" || subtype == "both") && (types.has("sg") || types.has("pl") || types.has("both"))) {
+                } else if (
+                    (subtype == NominalType.Singular || subtype == NominalType.Plural || subtype == NominalType.Both) &&
+                    (types.has(NominalType.Singular) || types.has(NominalType.Plural) || types.has(NominalType.Both))
+                ) {
                     // don't create conflicting number restrictions
                 } else {
                     types.add(subtype);
                 }
             }
 
-            if (!types.has("pl") && !types.has("both") && lemma.match(/^[A-ZĀĒĪŌŪȲĂĔĬŎŬ]/)) {
-                types.add("sg");
+            if (!types.has(NominalType.Plural) && !types.has(NominalType.Both) && lemma.match(/^[A-ZĀĒĪŌŪȲĂĔĬŎŬ]/)) {
+                types.add(NominalType.Singular);
             }
         }
 
-        if (types.has("loc")) {
+        if (types.has(NominalType.Locative)) {
             loc = true;
-            types.delete("loc");
+            types.delete(NominalType.Locative);
         }
 
         let gender: Gender | undefined;
-        if (types.has("M")) {
+        if (types.has(NominalType.Masculine)) {
             gender = Gender.M;
-        } else if (types.has("F")) {
+        } else if (types.has(NominalType.Feminine)) {
             gender = Gender.F;
-        } else if (types.has("N")) {
+        } else if (types.has(NominalType.Neuter)) {
             gender = Gender.N;
         }
 
-        if (types.has("pl")) {
+        if (types.has(NominalType.Plural)) {
             num = NumberTantum.Plural;
-            types.delete("pl");
-        } else if (types.has("sg")) {
+            types.delete(NominalType.Plural);
+        } else if (types.has(NominalType.Singular)) {
             num = NumberTantum.Singular;
-            types.delete("sg");
+            types.delete(NominalType.Singular);
         }
 
         const args = [base, stem2];
@@ -878,10 +898,10 @@ export class LaNominal {
         };
     }
 
-    private detect_adj_type_and_subtype(lemma: string, stem2: string, typ: string, subtypes: Set<string>): [any, any, any, any] {
-        if (!typ.match(/^[0123]/) && !typ.match(/^irreg/)) {
-            subtypes = new Set(subtypes);
-            subtypes.add(typ);
+    private detect_adj_type_and_subtype(lemma: string, stem2: string, typ: string, subtypes: Set<NominalType>): [any, any, any, any] {
+        if (!typ.match(/^[0123]/) && !typ.match(/^irreg/) && typ) {
+            subtypes = new Set<NominalType>(subtypes);
+            addNominalType(subtypes, typ);
             typ = "";
         }
 
@@ -905,17 +925,17 @@ export class LaNominal {
             ["us", "1&2", []],
             ["a", "1&2", []],
             ["um", "1&2", []],
-            ["ī", "1&2", ["pl"]],
-            ["ae", "1&2", ["pl"]],
-            ["a", "1&2", ["pl"]],
-            ["os", "1&2", ["greekA", "-greekE"]],
-            ["os", "1&2", ["greekE", "-greekA"]],
-            ["ē", "1&2", ["greekE", "-greekA"]],
-            ["on", "1&2", ["greekA", "-greekE"]],
-            ["on", "1&2", ["greekE", "-greekA"]],
-            ["^(.*er)$", "1&2", ["er"]],
-            ["^(.*ur)$", "1&2", ["er"]],
-            ["^(h)ic$", "1&2", ["ic"]],
+            ["ī", "1&2", [NominalType.Plural]],
+            ["ae", "1&2", [NominalType.Plural]],
+            ["a", "1&2", [NominalType.Plural]],
+            ["os", "1&2", [NominalType.GreekA, NominalType.NoGreekE]],
+            ["os", "1&2", [NominalType.GreekE, NominalType.NoGreekA]],
+            ["ē", "1&2", [NominalType.GreekE, NominalType.NoGreekA]],
+            ["on", "1&2", [NominalType.GreekA, NominalType.NoGreekE]],
+            ["on", "1&2", [NominalType.GreekE, NominalType.NoGreekA]],
+            ["^(.*er)$", "1&2", [NominalType.Er]],
+            ["^(.*ur)$", "1&2", [NominalType.Er]],
+            ["^(h)ic$", "1&2", [NominalType.Ic]],
         ];
 
         const decl3_entries: EndingTable = [
@@ -924,16 +944,16 @@ export class LaNominal {
             ["e", "3-2", []],
             ["^(.*[ij])or$", "3-C", []],
             ["^(min)or$", "3-C", []],
-            ["^(.*ēs)$", "3-1", ["I"]],
-            ["^(.*ēs)$", "3-1", ["par"]],
-            ["^(.*[ij])ōrēs$", "3-C", ["pl"]],
-            ["^(min)ōrēs$", "3-C", ["pl"]],
-            ["ēs", "3-2", ["pl", "I"]],
-            ["ēs", "3-1", ["pl", "par"], base_as_stem2],
-            ["ia", "3-2", ["pl", "I"]],
-            ["a", "3-1", ["pl", "par"], base_as_stem2],
-            ["", "3-1", ["I"]],
-            ["", "3-1", ["par"]],
+            ["^(.*ēs)$", "3-1", [NominalType.I]],
+            ["^(.*ēs)$", "3-1", [NominalType.Par]],
+            ["^(.*[ij])ōrēs$", "3-C", [NominalType.Plural]],
+            ["^(min)ōrēs$", "3-C", [NominalType.Plural]],
+            ["ēs", "3-2", [NominalType.Plural, NominalType.I]],
+            ["ēs", "3-1", [NominalType.Plural, NominalType.Par], base_as_stem2],
+            ["ia", "3-2", [NominalType.Plural, NominalType.I]],
+            ["a", "3-1", [NominalType.Plural, NominalType.Par], base_as_stem2],
+            ["", "3-1", [NominalType.I]],
+            ["", "3-1", [NominalType.Par]],
         ];
 
         if (!typ) {
@@ -952,77 +972,77 @@ export class LaNominal {
         } else if (typ == "1-1") {
             return this.get_adj_type_and_subtype_by_ending(lemma, stem2, typ, subtypes, [
                 ["a", "1-1", []],
-                ["ae", "1-1", ["pl"]]
+                ["ae", "1-1", [NominalType.Plural]]
             ]);
         } else if (typ == "2-2") {
             return this.get_adj_type_and_subtype_by_ending(lemma, stem2, typ, subtypes, [
                 ["us", "2-2", []],
                 ["um", "2-2", []],
-                ["ī", "2-2", ["pl"]],
-                ["a", "2-2", ["pl"]],
-                ["os", "2-2", ["greek"]],
-                ["on", "2-2", ["greek"]],
-                ["oe", "2-2", ["greek", "pl"]],
+                ["ī", "2-2", [NominalType.Plural]],
+                ["a", "2-2", [NominalType.Plural]],
+                ["os", "2-2", [NominalType.greek]],
+                ["on", "2-2", [NominalType.greek]],
+                ["oe", "2-2", [NominalType.greek, NominalType.Plural]],
             ]);
         } else if (typ == "3-1") {
             return this.get_adj_type_and_subtype_by_ending(lemma, stem2, typ, subtypes, [
-                ["^(.*ēs)$", "3-1", ["I"]],
-                ["^(.*ēs)$", "3-1", ["par"]],
-                ["ēs", "3-1", ["pl", "I"], base_as_stem2],
-                ["ēs", "3-1", ["pl", "par"], base_as_stem2],
-                ["ia", "3-1", ["pl", "I"], base_as_stem2],
-                ["a", "3-1", ["pl", "par"], base_as_stem2],
-                ["", "3-1", ["I"]],
-                ["", "3-1", ["par"]],
+                ["^(.*ēs)$", "3-1", [NominalType.I]],
+                ["^(.*ēs)$", "3-1", [NominalType.Par]],
+                ["ēs", "3-1", [NominalType.Plural, NominalType.I], base_as_stem2],
+                ["ēs", "3-1", [NominalType.Plural, NominalType.Par], base_as_stem2],
+                ["ia", "3-1", [NominalType.Plural, NominalType.I], base_as_stem2],
+                ["a", "3-1", [NominalType.Plural, NominalType.Par], base_as_stem2],
+                ["", "3-1", [NominalType.I]],
+                ["", "3-1", [NominalType.Par]],
             ], decl3_stem2);
         } else if (typ == "3-2") {
             return this.get_adj_type_and_subtype_by_ending(lemma, stem2, typ, subtypes, [
                 ["is", "3-2", []],
                 ["e", "3-2", []],
                 ["ēs", "3-2", []],
-                ["ēs", "3-2", ["pl"]],
-                ["ia", "3-2", ["pl"]],
+                ["ēs", "3-2", [NominalType.Plural]],
+                ["ia", "3-2", [NominalType.Plural]],
             ], decl3_stem2);
         } else if (typ == "3-C") {
             return this.get_adj_type_and_subtype_by_ending(lemma, stem2, typ, subtypes, [
                 ["^(.*[ij])or$", "3-C", []],
                 ["^(min)or$", "3-C", []],
-                ["^(.*[ij])ōrēs$", "3-C", ["pl"]],
-                ["^(min)ōrēs$", "3-C", ["pl"]],
+                ["^(.*[ij])ōrēs$", "3-C", [NominalType.Plural]],
+                ["^(min)ōrēs$", "3-C", [NominalType.Plural]],
             ], decl3_stem2);
         } else if (typ == "irreg") {
             return this.get_adj_type_and_subtype_by_ending(lemma, stem2, typ, subtypes, [
-                ["^(duo)$", typ, ["pl"]],
-                ["^(ambō)$", typ, ["pl"]],
-                ["^(mīll?ia)$", typ, ["N", "pl"], constant_base("mīlle")],
+                ["^(duo)$", typ, [NominalType.Plural]],
+                ["^(ambō)$", typ, [NominalType.Plural]],
+                ["^(mīll?ia)$", typ, [NominalType.Neuter, NominalType.Plural], constant_base("mīlle")],
                 ["^(ea)$", typ, [], constant_base("is")],
                 ["^(id)$", typ, [], constant_base("is")],
-                ["^([ei]ī)$", typ, ["pl"], constant_base("is")],
-                ["^(eae?)$", typ, ["pl"], constant_base("is")],
+                ["^([ei]ī)$", typ, [NominalType.Plural], constant_base("is")],
+                ["^(eae?)$", typ, [NominalType.Plural], constant_base("is")],
                 ["^(eadem)$", typ, [], constant_base("īdem")],
                 ["^([īi]dem)$", typ, [], constant_base("īdem")],
-                ["^(īdem)$", typ, ["pl"]],
-                ["^(eae?dem)$", typ, ["pl"], constant_base("īdem")],
+                ["^(īdem)$", typ, [NominalType.Plural]],
+                ["^(eae?dem)$", typ, [NominalType.Plural], constant_base("īdem")],
                 ["^(i[lps][lst])a$", typ, [], (base: string, s2: string) => [base + "e", ""]],
                 ["^(i[ls][lt])ud$", typ, [], (base: string, s2: string) => [base + "e", ""]],
                 ["^(ipsum)$", typ, [], constant_base("ipse")],
-                ["^(i[lps][lst])ī$", typ, ["pl"], (base: string, s2: string) => [base + "e", ""]],
-                ["^(i[lps][lst])ae?$", typ, ["pl"], (base: string, s2: string) => [base + "e", ""]],
+                ["^(i[lps][lst])ī$", typ, [NominalType.Plural], (base: string, s2: string) => [base + "e", ""]],
+                ["^(i[lps][lst])ae?$", typ, [NominalType.Plural], (base: string, s2: string) => [base + "e", ""]],
                 ["^(quī)$", typ, []],
-                ["^(quī)$", typ, ["pl"]],
+                ["^(quī)$", typ, [NominalType.Plural]],
                 ["^(quae)$", typ, [], constant_base("quī")],
-                ["^(quae)$", typ, ["pl"], constant_base("quī")],
+                ["^(quae)$", typ, [NominalType.Plural], constant_base("quī")],
                 ["^(quid)$", typ, [], constant_base("quis")],
                 ["^(quod)$", typ, [], constant_base("quī")],
                 ["^(qui[cd]quid)$", typ, [], constant_base("quisquis")],
-                ["^(quīquī)$", typ, ["pl"], constant_base("quisquis")],
-                ["^(quaequae)$", typ, ["pl"], constant_base("quisquis")],
+                ["^(quīquī)$", typ, [NominalType.Plural], constant_base("quisquis")],
+                ["^(quaequae)$", typ, [NominalType.Plural], constant_base("quisquis")],
                 ["", typ, []],
             ]);
         } else {
             return this.get_adj_type_and_subtype_by_ending(lemma, stem2, typ, subtypes, [
-                ["ēs", typ, ["pl"], base_as_stem2],
-                ["ia", typ, ["pl"], base_as_stem2],
+                ["ēs", typ, [NominalType.Plural], base_as_stem2],
+                ["ia", typ, [NominalType.Plural], base_as_stem2],
                 ["", typ, []],
             ], decl3_stem2);
         }
@@ -1032,23 +1052,23 @@ export class LaNominal {
         lemma: string,
         stem2: string,
         decltype: string | undefined,
-        specified_subtypes: Set<string>,
+        specified_subtypes: Set<NominalType>,
         endings_and_subtypes: EndingTable,
         process_stem2?: (base: string) => string):
-        [string, string, string, string[]]
+        [string, string, string, NominalType[]]
     {
         for (const [ending, rettype, subtypes, process_retval] of endings_and_subtypes) {
             let not_this_subtype = false;
-            if (specified_subtypes.has("pl") && !subtypes.includes("pl")) {
+            if (specified_subtypes.has(NominalType.Plural) && !subtypes.includes(NominalType.Plural)) {
                 not_this_subtype = true;
             } else {
                 for (const subtype of subtypes) {
-                    if (specified_subtypes.has("-" + subtype)) {
+                    if (!subtype.startsWith("-") && hasNominalType(specified_subtypes, "-" + subtype)) {
                         not_this_subtype = true;
                         break;
                     }
                     const must_not_be_present = subtype.match(/^-(.*)$/);
-                    if (must_not_be_present && specified_subtypes.has(must_not_be_present[1])) {
+                    if (must_not_be_present && hasNominalType(specified_subtypes, must_not_be_present[1])) {
                         not_this_subtype = true;
                         break;
                     }
@@ -1093,50 +1113,50 @@ export class LaNominal {
         }
     }
 
-    private detect_noun_subtype(lemma: string, stem2: string, typ: string, subtypes: Set<string>): [string, string, Set<string>] {
+    private detect_noun_subtype(lemma: string, stem2: string, typ: string, subtypes: Set<NominalType>): [string, string, Set<NominalType>] {
         if (typ == "1") {
             return this.get_noun_subtype_by_ending(lemma, stem2, typ, subtypes, [
-                ["ām", ["F", "am"]],
-                ["ās", ["M", "Greek", "Ma"]],
-                ["ēs", ["M", "Greek", "Me"]],
-                ["ē", ["F", "Greek"]],
-                ["ae", ["F", "pl"]],
-                ["a", ["F"]],
+                ["ām", [NominalType.Feminine, NominalType.Am]],
+                ["ās", [NominalType.Masculine, NominalType.Greek, NominalType.Ma]],
+                ["ēs", [NominalType.Masculine, NominalType.Greek, NominalType.Me]],
+                ["ē", [NominalType.Feminine, NominalType.Greek]],
+                ["ae", [NominalType.Feminine, NominalType.Plural]],
+                ["a", [NominalType.Feminine]],
             ]);
         } else if (typ == "2") {
             let detected_subtypes;
             [lemma, stem2, detected_subtypes] = this.get_noun_subtype_by_ending(lemma, stem2, typ, subtypes, [
-                ["^(.*r)$", ["M", "er"]],
-                ["^(.*v)os$", ["M", "vos"]],
-                ["^(.*v)om$", ["N", "vom"]],
-                ["os", ["M", "Greek"]],
-                ["os", ["N", "Greek", "us"]],
-                ["on", ["N", "Greek"]],
-                ["^([A-ZĀĒĪŌŪȲĂĔĬŎŬ].*)ius$", ["M", "ius", "voci", "sg"]],
-                ["ius", ["M", "ius"]],
-                ["ium", ["N", "ium"]],
-                ["us", ["M"]],
-                ["us", ["N", "us"]],
-                ["um", ["N"]],
-                ["iī", ["M", "ius", "pl"]],
-                ["ia", ["N", "ium", "pl"]],
-                ["ī", ["M", "pl"]],
-                ["ī", ["N", "us", "pl"]],
-                ["a", ["N", "pl"]],
+                ["^(.*r)$", [NominalType.Masculine, NominalType.Er]],
+                ["^(.*v)os$", [NominalType.Masculine, NominalType.Vos]],
+                ["^(.*v)om$", [NominalType.Neuter, NominalType.Vom]],
+                ["os", [NominalType.Masculine, NominalType.Greek]],
+                ["os", [NominalType.Neuter, NominalType.Greek, NominalType.Us]],
+                ["on", [NominalType.Neuter, NominalType.Greek]],
+                ["^([A-ZĀĒĪŌŪȲĂĔĬŎŬ].*)ius$", [NominalType.Masculine, NominalType.Ius, NominalType.VocI, NominalType.Singular]],
+                [NominalType.Ius, [NominalType.Masculine, NominalType.Ius]],
+                [NominalType.Ium, [NominalType.Neuter, NominalType.Ium]],
+                [NominalType.Us, [NominalType.Masculine]],
+                [NominalType.Us, [NominalType.Neuter, NominalType.Us]],
+                ["um", [NominalType.Neuter]],
+                ["iī", [NominalType.Masculine, NominalType.Ius, NominalType.Plural]],
+                ["ia", [NominalType.Neuter, NominalType.Ium, NominalType.Plural]],
+                ["ī", [NominalType.Masculine, NominalType.Plural]],
+                ["ī", [NominalType.Neuter, NominalType.Us, NominalType.Plural]],
+                ["a", [NominalType.Neuter, NominalType.Plural]],
             ]);
             stem2 = stem2 || lemma;
             return [lemma, stem2, detected_subtypes];
         } else if (typ == "3") {
             let match;
-            if (subtypes.has("pl")) {
-                if (subtypes.has("Greek")) {
+            if (subtypes.has(NominalType.Plural)) {
+                if (subtypes.has(NominalType.Greek)) {
                     match = lemma.match(/^(.*)erēs$/);
                     if (match) {
-                        return [match[1] + "ēr", match[1] + "er", new Set(["er"])];
+                        return [match[1] + "ēr", match[1] + "er", new Set([NominalType.Er])];
                     }
                     match = lemma.match(/^(.*)ontēs$/);
                     if (match) {
-                        return [match[1] + "ōn", match[1] + "ont", new Set(["on"])];
+                        return [match[1] + "ōn", match[1] + "ont", new Set([NominalType.On])];
                     }
                     match = lemma.match(/^(.*)es$/);
                     if (match) {
@@ -1146,11 +1166,11 @@ export class LaNominal {
                 }
                 match = lemma.match(/^(.*)ia$/);
                 if (match) {
-                    return ["foo", stem2 || match[1], new Set(["N", "I", "pure"])];
+                    return ["foo", stem2 || match[1], new Set([NominalType.Neuter, NominalType.I, NominalType.Pure])];
                 }
                 match = lemma.match(/^(.*)a$/);
                 if (match) {
-                    return ["foo", stem2 || match[1], new Set(["N"])];
+                    return ["foo", stem2 || match[1], new Set([NominalType.Neuter])];
                 }
                 match = lemma.match(/^(.*)ēs$/);
                 if (match) {
@@ -1163,32 +1183,32 @@ export class LaNominal {
             let detected_subtypes;
             let base;
             let tmp;
-            if (subtypes.has("Greek")) {
+            if (subtypes.has(NominalType.Greek)) {
                 [base, tmp, detected_subtypes] = this.get_noun_subtype_by_ending(lemma, stem2, "", subtypes, [
-                    [["is", ""], ["I"]],
-                    ["ēr", ["er"]],
-                    ["ōn", ["on"]],
+                    [["is", ""], [NominalType.I]],
+                    ["ēr", [NominalType.Er]],
+                    ["ōn", [NominalType.On]],
                 ]);
                 if (base) {
                     return [lemma, stem2, detected_subtypes];
                 }
                 return [lemma, stem2, new Set()];
             }
-            if (!subtypes.has("N")) {
+            if (!subtypes.has(NominalType.Neuter)) {
                 [base, tmp, detected_subtypes] = this.get_noun_subtype_by_ending(lemma, stem2, "", subtypes, [
-                    [["^([A-ZĀĒĪŌŪȲĂĔĬŎŬ].*pol)is$", ""], ["F", "polis", "sg", "loc"]],
-                    [["tūdō", "tūdin"], ["F"]],
-                    [["tās", "tāt"], ["F"]],
-                    [["tūs", "tūt"], ["F"]],
-                    [["tiō", "tiōn"], ["F"]],
-                    [["siō", "siōn"], ["F"]],
-                    [["xiō", "xiōn"], ["F"]],
-                    [["gō", "gin"], ["F"]],
-                    [["or", "ōr"], ["M"]],
-                    [["trīx", "trīc"], ["F"]],
-                    [["trix", "trīc"], ["F"]],
-                    [["is", ""], ["I"]],
-                    [["^([a-zāēīōūȳăĕĭŏŭ].*)ēs$", ""], ["I"]],
+                    [["^([A-ZĀĒĪŌŪȲĂĔĬŎŬ].*pol)is$", ""], [NominalType.Feminine, NominalType.Polis, NominalType.Singular, NominalType.Locative]],
+                    [["tūdō", "tūdin"], [NominalType.Feminine]],
+                    [["tās", "tāt"], [NominalType.Feminine]],
+                    [["tūs", "tūt"], [NominalType.Feminine]],
+                    [["tiō", "tiōn"], [NominalType.Feminine]],
+                    [["siō", "siōn"], [NominalType.Feminine]],
+                    [["xiō", "xiōn"], [NominalType.Feminine]],
+                    [["gō", "gin"], [NominalType.Feminine]],
+                    [["or", "ōr"], [NominalType.Masculine]],
+                    [["trīx", "trīc"], [NominalType.Feminine]],
+                    [["trix", "trīc"], [NominalType.Feminine]],
+                    [["is", ""], [NominalType.I]],
+                    [["^([a-zāēīōūȳăĕĭŏŭ].*)ēs$", ""], [NominalType.I]],
                 ]);
                 if (base) {
                     return [lemma, stem2, detected_subtypes];
@@ -1196,49 +1216,49 @@ export class LaNominal {
             }
 
             [base, tmp, detected_subtypes] = this.get_noun_subtype_by_ending(lemma, stem2, "", subtypes, [
-                [["us", "or"], ["N"]],
-                [["us", "er"], ["N"]],
-                [["ma", "mat"], ["N"]],
-                [["men", "min"], ["N"]],
-                [["^([A-ZĀĒĪŌŪȲĂĔĬŎŬ].*)e$", ""], ["N", "sg"]],
-                [["e", ""], ["N", "I", "pure"]],
-                [["al", "āl"], ["N", "I", "pure"]],
-                [["ar", "ār"], ["N", "I", "pure"]],
+                [["us", "or"], [NominalType.Neuter]],
+                [["us", "er"], [NominalType.Neuter]],
+                [["ma", "mat"], [NominalType.Neuter]],
+                [["men", "min"], [NominalType.Neuter]],
+                [["^([A-ZĀĒĪŌŪȲĂĔĬŎŬ].*)e$", ""], [NominalType.Neuter, NominalType.Singular]],
+                [["e", ""], [NominalType.Neuter, NominalType.I, NominalType.Pure]],
+                [["al", "āl"], [NominalType.Neuter, NominalType.I, NominalType.Pure]],
+                [["ar", "ār"], [NominalType.Neuter, NominalType.I, NominalType.Pure]],
             ]);
             if (base) {
                 return [lemma, stem2, detected_subtypes];
             }
             return [lemma, stem2, new Set()];
         } else if (typ == "4") {
-            if (subtypes.has("echo") || subtypes.has("argo") || subtypes.has("Callisto")) {
+            if (subtypes.has(NominalType.Echo) || subtypes.has(NominalType.argo) || subtypes.has(NominalType.Callisto)) {
                 const match = lemma.match(/^(.*)ō$/);
                 if (!match) {
                     throw Error(`Declension-4 noun of subtype .echo, .argo or .Callisto should end in -ō: ${lemma}`);
                 }
                 const base = match[1];
-                if (subtypes.has("Callisto")) {
-                    return [base, "", new Set(["F", "sg"])];
+                if (subtypes.has(NominalType.Callisto)) {
+                    return [base, "", new Set([NominalType.Feminine, NominalType.Singular])];
                 } else {
-                    return [base, "", new Set(["F"])];
+                    return [base, "", new Set([NominalType.Feminine])];
                 }
             }
             return this.get_noun_subtype_by_ending(lemma, stem2, typ, subtypes, [
-                ["us", ["M"]],
-                ["ū", ["N"]],
-                ["ūs", ["M", "pl"]],
-                ["ua", ["N", "pl"]],
+                ["us", [NominalType.Masculine]],
+                ["ū", [NominalType.Neuter]],
+                ["ūs", [NominalType.Masculine, NominalType.Plural]],
+                ["ua", [NominalType.Neuter, NominalType.Plural]],
             ]);
         } else if (typ == "5") {
             return this.get_noun_subtype_by_ending(lemma, stem2, typ, subtypes, [
-                ["iēs", ["F", "i"]],
-                ["iēs", ["F", "i", "pl"]],
-                ["ēs", ["F"]],
-                ["ēs", ["F", "pl"]],
+                ["iēs", [NominalType.Feminine, NominalType.i]],
+                ["iēs", [NominalType.Feminine, NominalType.i, NominalType.Plural]],
+                ["ēs", [NominalType.Feminine]],
+                ["ēs", [NominalType.Feminine, NominalType.Plural]],
             ]);
         } else if (typ == "irreg" && lemma == "domus") {
-            return [lemma, "", new Set(["loc"])];
+            return [lemma, "", new Set([NominalType.Locative])];
         } else if (typ == "indecl" || (typ == "irreg" && (lemma == "Deus" || lemma == "Iēsus" || lemma == "Jēsus" || lemma == "Athōs" || lemma == "vēnum"))) {
-            return [lemma, "", new Set(["sg"])];
+            return [lemma, "", new Set([NominalType.Singular])];
         } else {
             return [lemma, "", new Set()];
         }
@@ -1284,23 +1304,23 @@ export class LaNominal {
         lemma: string,
         stem2: string,
         decltype: string,
-        specified_subtypes: Set<string>,
-        endings_and_subtypes: [(string | string[]), string[]][]):
-        [string, string, Set<string>]
+        specified_subtypes: Set<NominalType>,
+        endings_and_subtypes: [(string | string[]), NominalType[]][]):
+        [string, string, Set<NominalType>]
     {
         for (const ending_and_subtype of endings_and_subtypes) {
             const ending = ending_and_subtype[0];
             const subtypes = ending_and_subtype[1];
             let not_this_subtype = false;
-            if (specified_subtypes.has("pl") && !subtypes.includes("pl")) {
+            if (specified_subtypes.has(NominalType.Plural) && !subtypes.includes(NominalType.Plural)) {
                 not_this_subtype = true;
             } else {
                 for (const subtype of subtypes) {
-                    if (specified_subtypes.has("-" + subtype) ||
-                        (subtype == "N" && (specified_subtypes.has("M") || specified_subtypes.has("F"))) ||
-                        ((subtype == "M" || subtype == "F") && specified_subtypes.has("N")) ||
-                        (subtype == "sg" && specified_subtypes.has("pl")) ||
-                        (subtype == "pl" && specified_subtypes.has("sg"))) {
+                    if (hasNominalType(specified_subtypes, "-" + subtype) ||
+                        (subtype == NominalType.Neuter && (specified_subtypes.has(NominalType.Masculine) || specified_subtypes.has(NominalType.Feminine))) ||
+                        ((subtype == NominalType.Masculine || subtype == NominalType.Feminine) && specified_subtypes.has(NominalType.Neuter)) ||
+                        (subtype == NominalType.Singular && specified_subtypes.has(NominalType.Plural)) ||
+                        (subtype == NominalType.Plural && specified_subtypes.has(NominalType.Singular))) {
                             not_this_subtype = true;
                             break;
                         }
@@ -1339,6 +1359,7 @@ export class LaNominal {
             categories: [],
             voc: true,
             noneut: false,
+            nomf: false,
         };
 
         for (const slot of this.iter_slots(is_adj)) {
@@ -1367,8 +1388,10 @@ export class LaNominal {
                         footnote: "",
                         num: seg.num,
                         gender: seg.gender,
+                        loc: seg.loc,
                         voc: true,
                         noneut: false,
+                        nomf: false,
                         pos: is_adj ? pos : "adjectives",
                         forms: new Map(),
                         types: seg.types,
@@ -1383,10 +1406,13 @@ export class LaNominal {
                     if (data.noneut) {
                         declensions.noneut = true;
                     }
+                    if (data.nomf) {
+                        declensions.nomf = true;
+                    }
 
-                    if (data.types.has("sufn")) {
+                    if (data.types.has(NominalType.SuffixN)) {
                         data.subtitles.push(["with", " 'm' optionally → 'n' in compounds"]);
-                    } else if (data.types.has("not_sufn")) {
+                    } else if (data.types.has(NominalType.NotSuffixN)) {
                         data.subtitles.push(["without", " 'm' optionally → 'n' in compounds"]);
                     }
 
@@ -1449,11 +1475,12 @@ export class LaNominal {
                         } else {
                             throw Error(`Internal error! Don't recognize noun declension ${apparent_decl}`);
                         }
+                        parsed_run.apparent_decl = apparent_decl;
                         data.title = data.title + " noun";
                     }
-                    if (data.types.has("sufn")) {
+                    if (data.types.has(NominalType.SuffixN)) {
                         data.subtitles.push(["with", " 'm' optionally → 'n' in compounds"]);
-                    } else if (data.types.has("not_sufn")) {
+                    } else if (data.types.has(NominalType.NotSuffixN)) {
                         data.subtitles.push(["without", " 'm' optionally → 'n' in compounds"]);
                     }
                     declensions.orig_titles.push(data.title);
@@ -1489,11 +1516,11 @@ export class LaNominal {
                     }
                 }
 
-                if (seg.types.has("lig")) {
+                if (seg.types.has(NominalType.Ligature)) {
                     this.apply_ligatures(data.forms, is_adj);
                 }
 
-                if (seg.types.has("sufn")) {
+                if (seg.types.has(NominalType.SuffixN)) {
                     this.apply_sufn(data.forms, is_adj);
                 }
 
@@ -1536,7 +1563,7 @@ export class LaNominal {
                     declensions.notes.set(slot, notes);
                 }
 
-                if (!seg.types.has("nocat") && (is_adj || !seg.is_adj)) {
+                if (!seg.types.has(NominalType.NoCategories) && (is_adj || !seg.is_adj)) {
                     for (const cat of data.categories) {
                         this.insert_if_not(declensions.categories, cat);
                     }
@@ -1579,7 +1606,7 @@ export class LaNominal {
                     }
                 }
                 if (!title_the_hard_way) {
-                    const subtypeses: Set<string> = new Set();
+                    const subtypeses = new Set<NominalType>();
                     for (const this_parsed_run of seg.alternants) {
                         for (const segment of this_parsed_run.segments) {
                             if (segment.type == "Segment" && segment.decl) {
@@ -1593,7 +1620,7 @@ export class LaNominal {
                             if (segment.type == "Segment" && segment.decl) {
                                 const neg_subtypes = this.set_difference(subtypeses, segment.types);
                                 for (const neg_subtype of neg_subtypes) {
-                                    segment.types.add("not_" + neg_subtype);
+                                    addNominalType(segment.types, "not_" + neg_subtype);
                                 }
                             }
                         }
@@ -1612,6 +1639,10 @@ export class LaNominal {
 
                     if (this_declensions.noneut) {
                         declensions.noneut = true;
+                    }
+
+                    if (this_declensions.nomf) {
+                        declensions.nomf = true;
                     }
 
                     if (this_parsed_run.num == "sg" || this_parsed_run.num == "pl") {
@@ -1862,8 +1893,8 @@ export class LaNominal {
         return sentences_to_join.join(joiner);
     }
 
-    private set_difference(a: Set<string>, b: Set<string>): Set<string> {
-        const res = new Set<string>();
+    private set_difference<T>(a: Set<T>, b: Set<T>): Set<T> {
+        const res = new Set<T>();
         for (const key of a.keys()) {
             if (!b.has(key)) {
                 res.add(key);
@@ -1963,6 +1994,7 @@ export class LaNominal {
                         }
                         newval.push(form);
                     }
+                    setNominalForm(forms, slot, newval);
                 }
             }
         }
