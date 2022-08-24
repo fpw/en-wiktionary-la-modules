@@ -225,11 +225,14 @@ export class LaNominal {
         ["5", "fifth"],
     ]);
 
+    private title: string | undefined;
+
     public constructor(options?: DeclOptions) {
         this.options = options || {};
     }
 
-    public do_generate_noun_forms(args: ArgMap, pos: string = "nouns", from_headword = false): NounData {
+    public do_generate_noun_forms(args: ArgMap, pos: string = "nouns", from_headword = false, title?: string): NounData {
+        this.title = title;
         const parsed_run = this.parse_segment_run_allowing_alternants(args.get("1")?.trim() || "");
         parsed_run.loc = parsed_run.loc || args.has("loc_sg") || args.has("loc_pl");
 
@@ -285,7 +288,8 @@ export class LaNominal {
         return all_data;
     }
 
-    public do_generate_adj_forms(args: ArgMap, pos: string = "adjectives", from_headword = false): AdjectiveData {
+    public do_generate_adj_forms(args: ArgMap, pos: string = "adjectives", from_headword = false, title?: string): AdjectiveData {
+        this.title = title;
         let segment_run = args.get("1")?.trim() || "";
         if (!segment_run.match(/[<(]/)) {
             segment_run = segment_run + (args.has("indecl") ? "<0+>" : "<+>");
@@ -788,7 +792,7 @@ export class LaNominal {
             }
         }
 
-        const orig_lemma = stems[0];
+        const orig_lemma = stems[0] || this.title;
         if (!orig_lemma) {
             throw Error("No lemma");
         }

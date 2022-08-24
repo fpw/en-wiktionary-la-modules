@@ -29,6 +29,7 @@ export class HeadwordParser {
         ["la-num-noun",     args => this.parseNominalHead(args, NominalType.Numeral)],
         ["la-suffix-noun",  args => this.parseNominalHead(args, NominalType.Suffix)],
         ["la-proper noun",  args => this.parseNominalHead(args, NominalType.ProperNoun)],
+        ["la-prop",         args => this.parseNominalHead(args, NominalType.ProperNoun)],
 
         // these are parsed by la-adecl
         ["la-adj",          args => this.parseAdjectivalHead(args, AdjectivalType.Adjective)],
@@ -113,7 +114,7 @@ export class HeadwordParser {
 
     private parseNominalHead(args: Args, pos: NominalType): HeadwordData {
         const overridePos = args.get("pos") || pos;
-        const decl = this.nominal.do_generate_noun_forms(args, overridePos, true);
+        const decl = this.nominal.do_generate_noun_forms(args, overridePos, true, args.get("lemma"));
         const isNum = (pos == "numerals");
 
         let lemmata = decl.overriding_lemma;

@@ -17,6 +17,7 @@ export class LaPersonalPronoun {
         let pers: 1 | 2 | 3;
 
         switch (lemma) {
+            case undefined:
             case "ego":
                 forms = new Map<NominalForm, string[]>([
                     [NominalForm.NomSg, ["ego"]],

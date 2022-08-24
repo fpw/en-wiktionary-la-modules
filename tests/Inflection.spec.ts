@@ -101,14 +101,27 @@ describe("engine", () => {
         const data = engine.parse_headword("{{la-adv|ibi|-|head2=ibī}}", "ibi");
         expect(data.heads.length).to.equal(2);
     });
+
+    it("can parse la-proper", () => {
+        const engine = new LaEngine();
+        const data = engine.parse_headword("{{la-prop|Euphrātēs<3>.Euphrātēs<1>|g=m|lemma=Euphrātēs|gen_sg=Euphrātis/Euphrātae}}", "Euphrates");
+        expect(data.heads.length).to.equal(1);
+    });
+
+    it("can parse Abdera", () => {
+        const engine = new LaEngine();
+        const data = engine.parse_headword("{{la-proper noun|Abdēra<2.loc>/Abdēra<1.loc>|lemma=Abdēra|num=both|g=n|g2=f|gen_sg=Abdērōrum/Abderae}}", "Abdera");
+        expect(data.heads.length).to.equal(1);
+    });
+
+    it("can parse empty ppron", () => {
+        const engine = new LaEngine();
+        const data = engine.parse_word("{{la-decl-ppron}}");
+        expect(data.templateType).to.equal("ppron");
+    });
 });
 
 function checkEntry(engine: LaEngine, entry: TestVector): void {
-    if (entry.lemma == "Abdera") {
-        // broken entry in Wiktionary
-        return;
-    }
-
     for (const inf of entry.inflections) {
         processTemplate(engine, inf, entry.lemma);
     }
