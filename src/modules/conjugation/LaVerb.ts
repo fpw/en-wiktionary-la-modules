@@ -41,6 +41,9 @@ export interface ConjOptions {
     // suppress poetic forms that are set using options like poetsyncperf
     suppressPoet?: boolean;
 
+    // suppress archaic forms
+    suppressArchaic?: boolean;
+
     // use short i in perfect infinitive of īre (iisse vs īsse)
     ireWithShortPerfInf?: boolean;
 
@@ -352,7 +355,7 @@ export class LaVerb {
             this.make_pres_3rd(data, typeinfo, typeinfo.pres_stem);
             this.make_perf_and_supine(data, typeinfo);
 
-            if (typeinfo.pres_stem.match(/nōsc/)) {
+            if (typeinfo.pres_stem.match(/nōsc/) && !this.options.suppressArchaic) {
                 const sub = (str: string, x: number, y: number) => {
                     return str.substring(x - 1, str.length + y + 1);
                 };
@@ -457,7 +460,6 @@ export class LaVerb {
             this.make_perf_and_supine(data, typeinfo);
 
             if (!this.options.suppressPoet) {
-                // guard added by @fpw
                 if (this.form_contains(getVerbForm(data.forms, "1s_pres_actv_indc"), "serviō") || this.form_contains(getVerbForm(data.forms, "1s_pres_actv_indc"), "saeviō")) {
                     this.add_forms(data, "impf_actv_indc", typeinfo.pres_stem,
                         ["iēbam", "ībam"],
@@ -2094,7 +2096,7 @@ export class LaVerb {
 
             this.add_form(data, "2s_pres_actv_impr", prefix, "dīc", 1);
 
-            if (!this.options.suppressPoet) {
+            if (!this.options.suppressArchaic) {
                 this.add_form(data, "2s_pres_actv_impr", prefix, "dīc", 1);
                 data.footnotes.set("2s_pres_actv_impr", ["Archaic."]);
                 if (prefix == "") {
@@ -2289,7 +2291,7 @@ export class LaVerb {
 
             this.make_pres_3rd(data, typeinfo, prefix_pres + "fer");
             if (!prefix_perf) {
-                if (this.options.suppressPoet) {
+                if (this.options.suppressArchaic) {
                     // added by @fpw
                     this.make_perf(data, ["tul"]);
                 } else {
@@ -2563,7 +2565,7 @@ export class LaVerb {
             setVerbForm(data.forms, "2p_pres_actv_subj", [prefix_s + "sītis"]);
             setVerbForm(data.forms, "3p_pres_actv_subj", [prefix_s + "sint"]);
 
-            if (prefix_s == "ad" && !this.options.suppressPoet) {
+            if (prefix_s == "ad" && !this.options.suppressArchaic) {
                 this.add_form(data, "3p_pres_actv_subj", "", "adessint", 2);
                 data.footnotes.set("3p_pres_actv_subj", ["Archaic."]);
             }
