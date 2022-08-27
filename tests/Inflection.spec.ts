@@ -118,6 +118,9 @@ describe("engine", () => {
         const engine = new LaEngine();
         const data = engine.parse_word("{{la-decl-ppron}}");
         expect(data.templateType).to.equal("ppron");
+
+        const data2 = engine.parse_word("{{la-decl-ppron|}}");
+        expect(data2.templateType).to.equal("ppron");
     });
 });
 

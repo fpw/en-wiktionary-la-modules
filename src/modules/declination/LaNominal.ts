@@ -3,7 +3,7 @@
  * It was converted from Lua to TypeScript by Folke Will <folko@solhost.org>.
  *
  * Original source: https://en.wiktionary.org/wiki/Module:la-nominal
- * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-nominal&oldid=68705587
+ * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-nominal&oldid=68766664
  *
  * Lua idioms, function and variable names kept as in the original in order to easily
  * backport later changes to this implementation.
@@ -45,7 +45,6 @@ interface SegmentRun {
     gender?: Gender;
     is_adj?: boolean;
     propses: DeclProp[];
-    apparent_decl?: string;
 }
 
 interface Segment {
@@ -389,12 +388,10 @@ export class LaNominal {
                 post_text_parts.push(", with locative");
             }
 
-            if (parsed_run.apparent_decl == "indecl") {
-                if (parsed_run.num == "sg") {
-                    post_text_parts.push(", singular only");
-                } else if (parsed_run.num == "pl") {
-                    post_text_parts.push(", plural only");
-                }
+            if (parsed_run.num == "sg") {
+                post_text_parts.push(", singular only");
+            } else if (parsed_run.num == "pl") {
+                post_text_parts.push(", plural only");
             }
 
             const post_text = post_text_parts.join("");
@@ -1479,7 +1476,6 @@ export class LaNominal {
                         } else {
                             throw Error(`Internal error! Don't recognize noun declension ${apparent_decl}`);
                         }
-                        parsed_run.apparent_decl = apparent_decl;
                         data.title = data.title + " noun";
                     }
                     if (data.types.has(NominalType.SuffixN)) {
