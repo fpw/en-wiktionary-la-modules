@@ -726,7 +726,7 @@ export const m_noun_decl: Map<string, ((data: SegmentData, args: string[]) => vo
                 setNominalForm(data.forms, "dat_sg", ["domuī"]);
                 setNominalForm(data.forms, "abl_sg", ["domō"]);
 
-                setNominalForm(data.forms, "gen_pl", ["domuum"]);
+                setNominalForm(data.forms, "gen_pl", ["domuum", "domōrum"]);
                 setNominalForm(data.forms, "acc_pl", ["domōs"]);
             }
             setNominalForm(data.forms, "acc_sg", ["domum"]);
