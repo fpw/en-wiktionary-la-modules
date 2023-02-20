@@ -5,7 +5,7 @@
  * A few new options to suppress certain rate forms were added.
  *
  * Original source: https://en.wiktionary.org/wiki/Module:la-verb
- * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-verb&oldid=67964189
+ * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-verb&oldid=71129594
  *
  * Lua idioms, function and variable names kept as in the original in order to easily
  * backport later changes to this implementation.

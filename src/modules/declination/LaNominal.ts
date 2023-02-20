@@ -22,6 +22,7 @@ export interface DeclOptions {
     suppressOldGenitive?: boolean;
     suppressNonNeuterIStemAccIs?: boolean;
     suppressRareIrregForms?: boolean;
+    useSimpleQuis?: boolean;
     populateAllTerminations?: boolean;
     suppressAdjPtcForms?: boolean;
 }

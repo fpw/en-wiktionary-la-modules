@@ -3,7 +3,7 @@
  * It was converted from Lua to TypeScript by Folke Will <folko@solhost.org>.
  *
  * Original source: https://en.wiktionary.org/wiki/Module:la-adj/data
- * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-adj/data&oldid=68705243
+ * Based on version: https://en.wiktionary.org/w/index.php?title=Module:la-adj/data&oldid=71117358
  *
  * Lua idioms, function and variable names kept as in the original in order to easily
  * backport later changes to this implementation.
@@ -618,7 +618,44 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
             setNominalForm(data.forms, "abl_pl_n", [""]);
 
             data.voc = false;
+        } else if (args[0] == "hice") {
+            data.title = "demonstrative pronoun";
+            setNominalForm(data.forms, "nom_sg_m", ["hice"]);
+            setNominalForm(data.forms, "nom_sg_f", ["haece"]);
+            setNominalForm(data.forms, "nom_sg_n", ["hoce"]);
+            setNominalForm(data.forms, "nom_pl_m", ["hīce"]);
+            setNominalForm(data.forms, "nom_pl_n", ["haece"]);
+            setNominalForm(data.forms, "nom_pl_f", ["haece"]);
 
+            setNominalForm(data.forms, "gen_sg_m", ["huiusce"]);
+            setNominalForm(data.forms, "gen_sg_f", ["huiusce"]);
+            setNominalForm(data.forms, "gen_sg_n", ["huiusce"]);
+            setNominalForm(data.forms, "gen_pl_m", ["hōrunce", "hōrumce"]);
+            setNominalForm(data.forms, "gen_pl_f", ["hārunce", "hārumce"]);
+            setNominalForm(data.forms, "gen_pl_n", ["hōrunce", "hōrumce"]);
+
+            setNominalForm(data.forms, "dat_sg_m", ["huīce"]);
+            setNominalForm(data.forms, "dat_sg_f", ["huīce"]);
+            setNominalForm(data.forms, "dat_sg_n", ["huīce"]);
+            setNominalForm(data.forms, "dat_pl_m", ["hīsce"]);
+            setNominalForm(data.forms, "dat_pl_f", ["hīsce"]);
+            setNominalForm(data.forms, "dat_pl_n", ["hīsce"]);
+
+            setNominalForm(data.forms, "acc_sg_m", ["hunce"]);
+            setNominalForm(data.forms, "acc_sg_f", ["hance"]);
+            setNominalForm(data.forms, "acc_sg_n", ["hoce"]);
+            setNominalForm(data.forms, "acc_pl_m", ["hōsce"]);
+            setNominalForm(data.forms, "acc_pl_f", ["hāsce"]);
+            setNominalForm(data.forms, "acc_pl_n", ["haece"]);
+
+            setNominalForm(data.forms, "abl_sg_m", ["hōce"]);
+            setNominalForm(data.forms, "abl_sg_f", ["hāce"]);
+            setNominalForm(data.forms, "abl_sg_n", ["hōce"]);
+            setNominalForm(data.forms, "abl_pl_m", ["hīsce"]);
+            setNominalForm(data.forms, "abl_pl_f", ["hīsce"]);
+            setNominalForm(data.forms, "abl_pl_n", ["hīsce"]);
+
+            data.voc = false;
         } else if (args[0] == "plūs") {
             data.title = "irregular third-declension comparative adjective";
 
@@ -799,67 +836,125 @@ export const m_adj_decl: Map<string, ((data: SegmentData, args: string[]) => voi
 
             data.categories = [];
         } else if (args[0] == "quis" || args[0] == "quī") {
-            let id = "id";
+            if (data.declOpts.useSimpleQuis) {
+                let id = "id";
+                if (args[0] == "quī") {
+                    id = "od";
+                }
+                data.title = "relative/interrogative pronoun";
+                if (args[0] == "quī") {
+                    setNominalForm(data.forms, "nom_sg_m", ["quī"]);
+                } else {
+                    setNominalForm(data.forms, "nom_sg_m", ["quis"]);
+                }
+                setNominalForm(data.forms, "nom_sg_f", ["quae"]);
+                setNominalForm(data.forms, "nom_sg_n", ["qu" + id]);
+                setNominalForm(data.forms, "nom_pl_m", ["quī"]);
+                setNominalForm(data.forms, "nom_pl_f", ["quae"]);
+                setNominalForm(data.forms, "nom_pl_n", ["quae"]);
 
-            if (args[0] == "quī") {
-                id = "od";
+                setNominalForm(data.forms, "acc_sg_m", ["quem"]);
                 setNominalForm(data.forms, "acc_sg_f", ["quam"]);
-                setNominalForm(data.forms, "abl_sg_f", ["quā"]);
-            } else {
-                setNominalForm(data.forms, "acc_sg_f", ["quem", "quam"]);
-                setNominalForm(data.forms, "abl_sg_f", ["quō", "quā"]);
-            }
-            data.title = "relative/interrogative pronoun";
+                setNominalForm(data.forms, "acc_sg_n", ["qu" + id]);
+                setNominalForm(data.forms, "acc_pl_m", ["quōs"]);
+                setNominalForm(data.forms, "acc_pl_f", ["quās"]);
+                setNominalForm(data.forms, "acc_pl_n", ["quae"]);
 
-            setNominalForm(data.forms, "nom_sg_m", ["quis"]);
-            setNominalForm(data.forms, "nom_sg_f", ["quis", "quae"]);
-            setNominalForm(data.forms, "nom_sg_n", ["qu" + id]);
-            setNominalForm(data.forms, "nom_pl_m", ["quī"]);
-            setNominalForm(data.forms, "nom_pl_f", ["quae"]);
-            setNominalForm(data.forms, "nom_pl_n", ["quae"]);
+                setNominalForm(data.forms, "gen_sg_m", ["cuius"]);
+                setNominalForm(data.forms, "gen_sg_f", ["cuius"]);
+                setNominalForm(data.forms, "gen_sg_n", ["cuius"]);
+                setNominalForm(data.forms, "gen_pl_m", ["quōrum"]);
+                setNominalForm(data.forms, "gen_pl_f", ["quārum"]);
+                setNominalForm(data.forms, "gen_pl_n", ["quōrum"]);
 
-            setNominalForm(data.forms, "gen_sg_m", ["cuius"]);
-            setNominalForm(data.forms, "gen_sg_f", ["cuius"]);
-            setNominalForm(data.forms, "gen_sg_n", ["cuius"]);
-            setNominalForm(data.forms, "gen_pl_m", ["quōrum"]);
-            setNominalForm(data.forms, "gen_pl_f", ["quārum"]);
-            setNominalForm(data.forms, "gen_pl_n", ["quōrum"]);
-
-            setNominalForm(data.forms, "dat_sg_m", ["cui"]);
-            setNominalForm(data.forms, "dat_sg_f", ["cui"]);
-            setNominalForm(data.forms, "dat_sg_n", ["cui"]);
-            if (!data.declOpts.suppressRareIrregForms) {
-                setNominalForm(data.forms, "dat_pl_m", ["quibus", "quīs"]);
-                setNominalForm(data.forms, "dat_pl_f", ["quibus", "quīs"]);
-                setNominalForm(data.forms, "dat_pl_n", ["quibus", "quīs"]);
-
-                setNominalForm(data.forms, "abl_pl_m", ["quibus", "quīs"]);
-                setNominalForm(data.forms, "abl_pl_f", ["quibus", "quīs"]);
-                setNominalForm(data.forms, "abl_pl_n", ["quibus", "quīs"]);
-            } else {
+                setNominalForm(data.forms, "dat_sg_m", ["cui"]);
+                setNominalForm(data.forms, "dat_sg_f", ["cui"]);
+                setNominalForm(data.forms, "dat_sg_n", ["cui"]);
                 setNominalForm(data.forms, "dat_pl_m", ["quibus"]);
                 setNominalForm(data.forms, "dat_pl_f", ["quibus"]);
                 setNominalForm(data.forms, "dat_pl_n", ["quibus"]);
 
+                setNominalForm(data.forms, "abl_sg_m", ["quō"]);
+                setNominalForm(data.forms, "abl_sg_f", ["quā"]);
+                setNominalForm(data.forms, "abl_sg_n", ["quō"]);
                 setNominalForm(data.forms, "abl_pl_m", ["quibus"]);
                 setNominalForm(data.forms, "abl_pl_f", ["quibus"]);
                 setNominalForm(data.forms, "abl_pl_n", ["quibus"]);
-            }
 
-            setNominalForm(data.forms, "acc_sg_m", ["quem"]);
-            setNominalForm(data.forms, "acc_sg_n", ["qu" + id]);
-            setNominalForm(data.forms, "acc_pl_m", ["quōs"]);
-            setNominalForm(data.forms, "acc_pl_f", ["quās"]);
-            setNominalForm(data.forms, "acc_pl_n", ["quae"]);
+                data.voc = false;
+            } else {
+                const note1 = "When used as an indefinite pronoun or adjective, the feminine nominative singular and neuter nominative/accusative plural is usually 'qua' instead of 'quae'. Indefinite 'qua' is generally only found directly after the accompanying '[[si#Latin|sī]]', '[[nisi#Latin|nisi]]', '[[num#Latin|num]]', or '[[ne#Latin|nē]]' and may be considered to be either enclitic to it or forming a compound with it; sometimes '[[siqua#Latin|sīqua]]', '[[numqua#Latin|numqua]]', and '[[nequa#Latin|nēqua]]' are written together. The form 'qua' is never found for any form of the interrogative or relative pronouns, nor for the feminine plural of the indefinite pronoun or adjective.";
+                const note2 = "In Republican Latin or earlier, 'quī' was often spelled as '[[quei]]', 'cuius' as '[[quoius]]', 'cui' as '[[quoi]]' (or '[[quoiei]]'), and 'quīs' as '[[queis]]'.";
+                let id = "id";
 
-            setNominalForm(data.forms, "abl_sg_m", ["quō"]);
-            setNominalForm(data.forms, "abl_sg_n", ["quō"]);
+                if (args[0] == "quī") {
+                    id = "od";
+                    setNominalForm(data.forms, "nom_sg_m", ["quī", "quis"]);
+                    setNominalForm(data.forms, "nom_sg_f", ["quae", "qua"]);
+                    setNominalForm(data.forms, "acc_sg_f", ["quam"]);
+                    setNominalForm(data.forms, "abl_sg_m", ["quō"]);
+                    setNominalForm(data.forms, "abl_sg_f", ["quā"]);
+                    setNominalForm(data.forms, "abl_sg_n", ["quō"]);
+                    data.notes.set("nom_sg_m1", note2);
+                    data.notes.set("nom_sg_f2", note1);
+                } else {
+                    setNominalForm(data.forms, "nom_sg_m", ["quis", "quī"]);
+                    setNominalForm(data.forms, "nom_sg_f", ["quae", "qua", "quis"]);
+                    setNominalForm(data.forms, "acc_sg_f", ["quam", "quem"]);
+                    setNominalForm(data.forms, "abl_sg_m", ["quō", "quī"]);
+                    setNominalForm(data.forms, "abl_sg_f", ["quā", "quī"]);
+                    setNominalForm(data.forms, "abl_sg_n", ["quō", "quī"]);
+                    data.notes.set("nom_sg_m2", note2);
+                    data.notes.set("nom_sg_f2", note1);
+                }
+                data.title = "relative/interrogative pronoun";
 
-            data.voc = false;
+                setNominalForm(data.forms, "nom_sg_n", ["qu" + id]);
+                setNominalForm(data.forms, "nom_pl_m", ["quī"]);
+                setNominalForm(data.forms, "nom_pl_f", ["quae"]);
+                setNominalForm(data.forms, "nom_pl_n", ["quae", "qua"]);
+                data.notes.set("nom_pl_m1", note2);
+                data.notes.set("nom_pl_n2", note1);
 
-            if (args[0] == "quī") {
-                setNominalForm(data.forms, "nom_sg_m", ["quī"]);
-                setNominalForm(data.forms, "nom_sg_f", ["quae"]);
+                setNominalForm(data.forms, "gen_sg_m", ["cuius"]);
+                setNominalForm(data.forms, "gen_sg_f", ["cuius"]);
+                setNominalForm(data.forms, "gen_sg_n", ["cuius"]);
+                setNominalForm(data.forms, "gen_pl_m", ["quōrum"]);
+                setNominalForm(data.forms, "gen_pl_f", ["quārum"]);
+                setNominalForm(data.forms, "gen_pl_n", ["quōrum"]);
+                data.notes.set("gen_sg_m1", note2);
+                data.notes.set("gen_sg_f1", note2);
+                data.notes.set("gen_sg_n1", note2);
+
+                setNominalForm(data.forms, "dat_sg_m", ["cui"]);
+                setNominalForm(data.forms, "dat_sg_f", ["cui"]);
+                setNominalForm(data.forms, "dat_sg_n", ["cui"]);
+                data.notes.set("dat_sg_m1", note2);
+                data.notes.set("dat_sg_f1", note2);
+                data.notes.set("dat_sg_n1", note2);
+
+                setNominalForm(data.forms, "dat_pl_m", ["quibus", "quīs"]);
+                setNominalForm(data.forms, "dat_pl_f", ["quibus", "quīs"]);
+                setNominalForm(data.forms, "dat_pl_n", ["quibus", "quīs"]);
+                data.notes.set("dat_pl_m2", note2);
+                data.notes.set("dat_pl_f2", note2);
+                data.notes.set("dat_pl_n2", note2);
+
+                setNominalForm(data.forms, "abl_pl_m", ["quibus", "quīs"]);
+                setNominalForm(data.forms, "abl_pl_f", ["quibus", "quīs"]);
+                setNominalForm(data.forms, "abl_pl_n", ["quibus", "quīs"]);
+                data.notes.set("abl_pl_m2", note2);
+                data.notes.set("abl_pl_f2", note2);
+                data.notes.set("abl_pl_n2", note2);
+
+                setNominalForm(data.forms, "acc_sg_m", ["quem"]);
+                setNominalForm(data.forms, "acc_sg_n", ["qu" + id]);
+                setNominalForm(data.forms, "acc_pl_m", ["quōs"]);
+                setNominalForm(data.forms, "acc_pl_f", ["quās"]);
+                setNominalForm(data.forms, "acc_pl_n", ["quae", "qua"]);
+                data.notes.set("acc_pl_n2", note1);
+
+                data.voc = false;
             }
         } else if (args[0] == "quisquis") {
             data.title = "relative/interrogative pronoun";

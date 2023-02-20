@@ -1,11 +1,15 @@
 import { parse_template } from "./modules/common";
-import { ConjOptions, VerbData, LaVerb } from "./modules/conjugation/LaVerb";
-import { NounData, LaNominal, AdjectiveData, DeclOptions } from "./modules/declination/LaNominal";
-import { LaPersonalPronoun, PersonalPronounData } from "./modules/declination/LaPersonalPronoun";
+import { ConjOptions, VerbData as VerbInflectionData, LaVerb } from "./modules/conjugation/LaVerb";
+import { NounData as NounInflectionData, LaNominal, AdjectiveData as AdjectiveInflectionData, DeclOptions } from "./modules/declination/LaNominal";
+import { LaPersonalPronoun, PersonalPronounData as PersonalPronounInflectionData } from "./modules/declination/LaPersonalPronoun";
 import { HeadwordData } from "./modules/headword/HeadWord";
 import { HeadwordParser } from "./modules/headword/HeadwordParser";
 
-export type InflectionData = NounData | AdjectiveData | VerbData | PersonalPronounData;
+export type InflectionData =
+    NounInflectionData |
+    AdjectiveInflectionData |
+    VerbInflectionData |
+    PersonalPronounInflectionData;
 
 export interface EngineOptions {
     verbOptions?: ConjOptions;
@@ -24,12 +28,12 @@ export class LaEngine {
         this.headword = new HeadwordParser(this.nominal, this.conj);
     }
 
-    public decline_noun(template: string): NounData {
+    public decline_noun(template: string): NounInflectionData {
         const args = parse_template(template);
         return this.nominal.do_generate_noun_forms(args);
     }
 
-    public decline_gerund(template: string): NounData {
+    public decline_gerund(template: string): NounInflectionData {
         const args = parse_template(template);
         const gerund = args.get("1");
 
@@ -38,12 +42,12 @@ export class LaEngine {
         return this.nominal.do_generate_noun_forms(gerundArgs, "gerunds");
     }
 
-    public decline_adjective(template: string): AdjectiveData {
+    public decline_adjective(template: string): AdjectiveInflectionData {
         const args = parse_template(template);
         return this.nominal.do_generate_adj_forms(args);
     }
 
-    public conjugate_verb(template: string): VerbData {
+    public conjugate_verb(template: string): VerbInflectionData {
         const args = parse_template(template);
         return this.conj.make_data(args);
     }
