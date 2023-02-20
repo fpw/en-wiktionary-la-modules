@@ -114,7 +114,7 @@ export interface DeclensionData {
     overriding_lemma: string[];
 }
 
-export interface NounData extends DeclensionData {
+export interface NounInflectionData extends DeclensionData {
     declensionType: "noun";
 
     // only in headwords
@@ -124,7 +124,7 @@ export interface NounData extends DeclensionData {
     overriding_genders?: string[];
 }
 
-export interface AdjectiveData extends DeclensionData {
+export interface AdjectiveInflectionData extends DeclensionData {
     declensionType: "adjective";
 
     voc: boolean;
@@ -231,7 +231,7 @@ export class LaNominal {
         this.options = options || {};
     }
 
-    public do_generate_noun_forms(args: ArgMap, pos: string = "nouns", from_headword = false, title?: string): NounData {
+    public do_generate_noun_forms(args: ArgMap, pos: string = "nouns", from_headword = false, title?: string): NounInflectionData {
         this.title = title;
         const parsed_run = this.parse_segment_run_allowing_alternants(args.get("1")?.trim() || "");
         parsed_run.loc = parsed_run.loc || args.has("loc_sg") || args.has("loc_pl");
@@ -251,7 +251,7 @@ export class LaNominal {
 
         declensions.title = [this.construct_title(args.get("title"), declensions.title.join(""), false, parsed_run)];
 
-        const all_data: NounData = {
+        const all_data: NounInflectionData = {
             templateType: "declension",
             declensionType: "noun",
 
@@ -288,7 +288,7 @@ export class LaNominal {
         return all_data;
     }
 
-    public do_generate_adj_forms(args: ArgMap, pos: string = "adjectives", from_headword = false, title?: string): AdjectiveData {
+    public do_generate_adj_forms(args: ArgMap, pos: string = "adjectives", from_headword = false, title?: string): AdjectiveInflectionData {
         this.title = title;
         let segment_run = args.get("1")?.trim() || "";
         if (!segment_run.match(/[<(]/)) {
@@ -327,7 +327,7 @@ export class LaNominal {
 
         declensions.title = [this.construct_title(args.get("title"), declensions.title.join(""), from_headword, parsed_run)];
 
-        const all_data: AdjectiveData = {
+        const all_data: AdjectiveInflectionData = {
             templateType: "declension",
             declensionType: "adjective",
 
@@ -408,7 +408,7 @@ export class LaNominal {
         return declensions_title;
     }
 
-    private process_noun_forms_and_overrides(data: NounData, args: ArgMap) {
+    private process_noun_forms_and_overrides(data: NounInflectionData, args: ArgMap) {
         const linked_to_non_linked_noun_slots = new Map();
 
         for (const slot of this.potential_noun_lemma_slots) {
@@ -442,7 +442,7 @@ export class LaNominal {
         }
     }
 
-    private process_adj_forms_and_overrides(data: AdjectiveData, args: ArgMap) {
+    private process_adj_forms_and_overrides(data: AdjectiveInflectionData, args: ArgMap) {
         const linked_to_non_linked_adj_slots = new Map();
         for (const slot of this.potential_adj_lemma_slots) {
             linked_to_non_linked_adj_slots.set("linked_" + slot, slot);

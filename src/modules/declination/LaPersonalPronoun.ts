@@ -2,7 +2,7 @@ import { ArgMap, FormMap } from "../common";
 import { NumberTantum } from "./LaNominal";
 import { NominalForm } from "./NominalForm";
 
-export interface PersonalPronounData {
+export interface PersonalPronounInflectionData {
     templateType: "ppron";
     forms: FormMap<NominalForm>;
     pers: 1 | 2 | 3;
@@ -10,7 +10,7 @@ export interface PersonalPronounData {
 }
 
 export class LaPersonalPronoun {
-    public make_data(args: ArgMap): PersonalPronounData {
+    public make_data(args: ArgMap): PersonalPronounInflectionData {
         const lemma = args.get("1");
         let forms: Map<NominalForm, string[]>;
         let num: NumberTantum;

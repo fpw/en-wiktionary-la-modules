@@ -1,5 +1,5 @@
-import { VerbData } from "../conjugation/LaVerb";
-import { AdjectiveData, NounData } from "../declination/LaNominal";
+import { VerbInflectionData } from "../conjugation/LaVerb";
+import { AdjectiveInflectionData, NounInflectionData } from "../declination/LaNominal";
 
 export type HeadwordData =
      NominalHead | AdjectivalHead | PrepositionHead |
@@ -29,7 +29,7 @@ export interface NominalHead extends BaseHead {
     headType: "nominal";
     partOfSpeech: NominalType;
     indeclinable: boolean;
-    data: NounData;
+    data: NounInflectionData;
     genders: string[];
 }
 
@@ -46,7 +46,7 @@ export interface AdjectivalHead extends BaseHead {
     headType: "adjectival";
     partOfSpeech: AdjectivalType;
     indeclinable: boolean;
-    data: AdjectiveData;
+    data: AdjectiveInflectionData;
     comparatives: string[];
     superlatives: string[];
     adverbs: string[];
@@ -60,7 +60,7 @@ export enum VerbalType {
 export interface VerbalHead extends BaseHead {
     headType: "verbal";
     partOfSpeech: VerbalType;
-    data: VerbData;
+    data: VerbInflectionData;
     infinitives: string[];
 }
 

@@ -51,7 +51,7 @@ export interface ConjOptions {
     reorderEdere?: boolean;
 }
 
-export interface VerbData {
+export interface VerbInflectionData {
     templateType: "conjugation";
 
     info: ConjugationInfo;
@@ -158,7 +158,7 @@ export class LaVerb {
         this.setup_conjs();
     }
 
-    public make_data(args: ArgMap): VerbData {
+    public make_data(args: ArgMap): VerbInflectionData {
         for (const slot of this.iter_slots(true, false)) {
             if (!args.has(slot)) {
                 args.set(slot, "");

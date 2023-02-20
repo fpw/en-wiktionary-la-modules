@@ -1,7 +1,7 @@
 import { parse_template } from "./modules/common";
-import { ConjOptions, VerbData as VerbInflectionData, LaVerb } from "./modules/conjugation/LaVerb";
-import { NounData as NounInflectionData, LaNominal, AdjectiveData as AdjectiveInflectionData, DeclOptions } from "./modules/declination/LaNominal";
-import { LaPersonalPronoun, PersonalPronounData as PersonalPronounInflectionData } from "./modules/declination/LaPersonalPronoun";
+import { ConjOptions, VerbInflectionData, LaVerb } from "./modules/conjugation/LaVerb";
+import { NounInflectionData, LaNominal, AdjectiveInflectionData, DeclOptions } from "./modules/declination/LaNominal";
+import { LaPersonalPronoun, PersonalPronounInflectionData } from "./modules/declination/LaPersonalPronoun";
 import { HeadwordData } from "./modules/headword/HeadWord";
 import { HeadwordParser } from "./modules/headword/HeadwordParser";
 
