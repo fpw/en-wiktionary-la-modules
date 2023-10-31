@@ -13,3 +13,5 @@ changes to the Wiktionary modules can easily be ported.
 
 For this reason and due to the CC license, it's suggested to create wrapper modules around
 this code with proper idioms and safer types.
+
+ A similar library, reimplementing Wiktionary's ancient Greek conjugation code, is Ben Crowell's [greek_conjugation](https://bitbucket.org/ben-crowell/greek_conjugation/) Ruby library.
